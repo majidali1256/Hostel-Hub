@@ -1,0 +1,511 @@
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { User, Hostel } from './types';
+import Login from './components/Login';
+import AccountTypeSelector from './components/AccountTypeSelector';
+import Sidebar from './components/Sidebar';
+import SearchBar from './components/SearchBar';
+import HostelList from './components/HostelList';
+import Modal from './components/Modal';
+import PropertyListingForm from './components/PropertyListingForm';
+import { PlusIcon } from './components/icons/PlusIcon';
+import Profile from './components/Profile';
+import HostelDetail from './components/HostelDetail';
+import { MenuIcon } from './components/icons/MenuIcon';
+import Settings from './components/Settings';
+import { SpinnerIcon } from './components/icons/SpinnerIcon';
+import { api } from './services/mongoService';
+
+// New Module Imports
+import ChatDashboard from './components/ChatDashboard';
+import RoommateMatchList from './components/RoommateMatchList';
+import AgreementDashboard from './components/AgreementDashboard';
+import AdminLayout from './components/admin/AdminLayout';
+import OAuthCallback from './components/OAuthCallback';
+import FairRentEstimator from './components/FairRentEstimator';
+
+const getRandomImages = (count = 3) => {
+  const placeholderImages = [
+    'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1596276020587-8044fe56ceca?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1520277439717-9164d0987285?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1623625434462-e5e42318ae49?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1512918760513-95f6929c3cc3?auto=format&fit=crop&w=800&q=80'
+  ];
+  const shuffled = [...placeholderImages].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.min(count, placeholderImages.length));
+};
+
+const App: React.FC = () => {
+  // Check for OAuth callback route
+  if (window.location.pathname === '/oauth/callback') {
+    return <OAuthCallback />;
+  }
+
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [hostels, setHostels] = useState<Hostel[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingHostel, setEditingHostel] = useState<Hostel | null>(null);
+
+  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator'>('dashboard');
+  const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
+  const [selectedHostelOwner, setSelectedHostelOwner] = useState<User | null>(null);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [sortOption, setSortOption] = useState('default');
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilters, setSearchFilters] = useState<Record<string, any> | null>(null);
+  const [searchBarKey, setSearchBarKey] = useState(Date.now());
+  const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return (savedTheme as 'light' | 'dark') || 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  useEffect(() => {
+    const unsubscribe = api.auth.onAuthStateChanged(async (mockUser) => {
+      if (mockUser) {
+        const userProfile = await api.db.getUser(mockUser.id);
+        if (userProfile) {
+          setUser(userProfile);
+        } else {
+          // Fallback if profile doesn't exist yet but auth does
+          console.log("User auth found, but no profile yet.");
+        }
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setHostels([]);
+      return;
+    }
+
+    const unsubscribe = api.db.subscribeToHostels((data) => {
+      setHostels(data);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchOwner = async () => {
+      if (selectedHostel && selectedHostel.ownerId) {
+        const owner = await api.db.getUser(selectedHostel.ownerId);
+        setSelectedHostelOwner(owner);
+      } else {
+        setSelectedHostelOwner(null);
+      }
+    };
+
+    fetchOwner();
+  }, [selectedHostel]);
+
+
+  const handleSignUp = async (uid: string, userData: Omit<User, 'id' | 'role'>) => {
+    // This function is called after successful Mock Auth signup
+    const newUser: User = { id: uid, ...userData, role: 'pending', stayHistory: [] };
+    const savedUser = await api.db.setUser(uid, newUser);
+    setUser(savedUser);
+  };
+
+  const handleRoleSelect = async (role: 'owner' | 'customer') => {
+    if (user && user.role === 'pending') {
+      const updatedUser = { ...user, role };
+      await api.db.setUser(user.id, updatedUser);
+      setUser(updatedUser);
+    }
+  };
+
+  const handleMessageOwner = async (ownerId: string) => {
+    try {
+      setIsLoading(true);
+      // Check if conversation exists or create new one
+      const conversations = await api.conversations.getAll();
+      let conversation = conversations.find((c: any) =>
+        c.participants.some((p: any) => p._id === ownerId || p.id === ownerId)
+      );
+
+      if (!conversation) {
+        conversation = await api.conversations.create(ownerId);
+      }
+
+      setInitialConversationId(conversation._id || conversation.id);
+      setCurrentView('chat');
+      setSelectedHostel(null);
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+      alert('Failed to start conversation with owner');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    api.auth.signOut();
+    setCurrentView('dashboard');
+    setSelectedHostel(null);
+    setIsMenuOpen(false);
+  };
+
+  const handleNavigate = (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator') => {
+    setSelectedHostel(null);
+    setCurrentView(view);
+    setIsMenuOpen(false);
+  };
+
+  const handleSwitchRole = async () => {
+    if (!user) return;
+    const newRole = user.role === 'owner' ? 'customer' : 'owner';
+    await api.db.setUser(user.id, { role: newRole });
+    // User state update handles via auth subscription, but for immediate UI feedback:
+    setUser(prev => prev ? { ...prev, role: newRole } : null);
+    setCurrentView('profile');
+  };
+
+  const handleSearch = useCallback((query: string, filters: Record<string, any>) => {
+    setSortOption('default');
+    setSearchQuery(query);
+    setSearchFilters(filters);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    setSearchFilters(null);
+    setSortOption('default');
+    setSearchBarKey(Date.now());
+  }, []);
+
+  const handleOpenAddModal = () => {
+    setEditingHostel(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (hostel: Hostel) => {
+    setEditingHostel(hostel);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveHostel = async (hostelData: Omit<Hostel, 'id'> & { id?: string }) => {
+    if (editingHostel && hostelData.id) {
+      await api.db.updateHostel(hostelData as Hostel);
+      if (selectedHostel && selectedHostel.id === hostelData.id) {
+        setSelectedHostel(prev => prev ? { ...prev, ...hostelData } as Hostel : null);
+      }
+    } else if (user) {
+      const newHostel = {
+        ...hostelData,
+        ownerId: user.id,
+        ratings: [],
+        images: hostelData.images?.length > 0 ? hostelData.images : getRandomImages()
+      };
+      await api.db.addHostel(newHostel);
+    }
+    setIsModalOpen(false);
+    setEditingHostel(null);
+  };
+
+  const handleDeleteHostel = async (hostelId: string) => {
+    if (window.confirm('Are you sure you want to delete this hostel listing?')) {
+      await api.db.deleteHostel(hostelId);
+      setSelectedHostel(null);
+    }
+  };
+
+  const handleRateHostel = async (hostelId: string, score: number) => {
+    if (!user) return;
+
+    const hostel = hostels.find(h => h.id === hostelId);
+    if (hostel) {
+      const existingRatings = hostel.ratings || [];
+      const userRatingIndex = existingRatings.findIndex(r => r.userId === user.id);
+      let newRatings: Array<{ userId: string; score: number; }>;
+
+      if (userRatingIndex > -1) {
+        newRatings = [...existingRatings];
+        newRatings[userRatingIndex] = { userId: user.id, score };
+      } else {
+        newRatings = [...existingRatings, { userId: user.id, score }];
+      }
+
+      const newAverage = newRatings.reduce((acc, r) => acc + r.score, 0) / newRatings.length;
+
+      await api.db.updateHostel({ id: hostelId, ratings: newRatings, rating: newAverage } as Hostel);
+
+      // Update local selection if viewing this hostel
+      if (selectedHostel && selectedHostel.id === hostelId) {
+        setSelectedHostel({ ...selectedHostel, ratings: newRatings, rating: newAverage });
+      }
+    }
+  };
+
+  const handleClearRating = async (hostelId: string) => {
+    if (!user) return;
+    const hostel = hostels.find(h => h.id === hostelId);
+
+    if (hostel) {
+      const newRatings = (hostel.ratings || []).filter(r => r.userId !== user.id);
+      const newAverage = newRatings.length > 0 ? newRatings.reduce((acc, r) => acc + r.score, 0) / newRatings.length : 0;
+      await api.db.updateHostel({ id: hostelId, ratings: newRatings, rating: newAverage } as Hostel);
+
+      if (selectedHostel && selectedHostel.id === hostelId) {
+        setSelectedHostel({ ...selectedHostel, ratings: newRatings, rating: newAverage });
+      }
+    }
+  };
+
+  const handleMarkAsStayed = async (hostelId: string) => {
+    if (!user) return;
+    const currentHistory = user.stayHistory || [];
+    if (!currentHistory.includes(hostelId)) {
+      const newHistory = [...currentHistory, hostelId];
+      await api.db.setUser(user.id, { stayHistory: newHistory });
+      setUser(prev => prev ? { ...prev, stayHistory: newHistory } : null);
+    }
+  };
+
+  const handleUpdateUser = async (updatedData: Partial<User> | FormData) => {
+    if (!user) return;
+    try {
+      const updatedUser = await api.db.setUser(user.id, updatedData);
+      setUser(updatedUser);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      alert('Failed to update profile.');
+    }
+  };
+
+  const filteredHostels = useMemo(() => {
+    if (!searchQuery && !searchFilters) {
+      return hostels;
+    }
+    return hostels.filter(hostel => {
+      let textMatch = true;
+      if (searchQuery) {
+        const queryLower = searchQuery.toLowerCase();
+        const nameMatch = hostel.name.toLowerCase().includes(queryLower);
+        const locationMatch = hostel.location.toLowerCase().includes(queryLower);
+        const descriptionMatch = hostel.description?.toLowerCase().includes(queryLower) || false;
+        textMatch = nameMatch || locationMatch || descriptionMatch;
+      }
+
+      let filterMatch = true;
+      if (searchFilters) {
+        const priceMatch = hostel.price >= searchFilters.priceRange[0] && (searchFilters.priceRange[1] === 30000 || hostel.price <= searchFilters.priceRange[1]);
+        const amenitiesMatch = searchFilters.amenities.every((amenity: string) => hostel.amenities.includes(amenity));
+        filterMatch = priceMatch && amenitiesMatch;
+      }
+
+      return textMatch && filterMatch;
+    });
+  }, [hostels, searchQuery, searchFilters]);
+
+  const sortedHostels = useMemo(() => {
+    if (sortOption === 'default') {
+      return filteredHostels;
+    }
+    const hostelsToSort = [...filteredHostels];
+    switch (sortOption) {
+      case 'price-asc':
+        hostelsToSort.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-desc':
+        hostelsToSort.sort((a, b) => b.price - a.price);
+        break;
+      case 'rating-desc':
+        hostelsToSort.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'name-asc':
+        hostelsToSort.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      default:
+        break;
+    }
+    return hostelsToSort;
+  }, [filteredHostels, sortOption]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <SpinnerIcon />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login onSignUpSubmit={handleSignUp} />;
+  }
+
+  if (user.role === 'pending') {
+    return <AccountTypeSelector onSelectRole={handleRoleSelect} username={user.username} />
+  }
+
+  const isSearchActive = !!(searchQuery || searchFilters);
+
+  const renderDashboard = () => (
+    <>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-gray-100 dark:border-gray-700 transition-colors">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">Find your perfect stay, {user.username}!</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-lg mb-6">Use our search to discover hostels tailored to your needs.</p>
+        <SearchBar key={searchBarKey} onSearch={handleSearch} />
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200">Hostel Listings</h2>
+            {isSearchActive && (
+              <button onClick={handleClearSearch} className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline focus:outline-none">Clear Search</button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <label htmlFor="sort-hostels" className="text-sm font-medium text-gray-700 dark:text-gray-300 sr-only sm:not-sr-only">Sort by:</label>
+            <select
+              id="sort-hostels"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-auto p-2"
+              aria-label="Sort hostels"
+            >
+              <option value="default">Recommended</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="rating-desc">Rating: High to Low</option>
+              <option value="name-asc">Name: A-Z</option>
+            </select>
+          </div>
+        </div>
+        {user.role === 'owner' && (
+          <button
+            onClick={handleOpenAddModal}
+            className="flex-shrink-0 flex items-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          >
+            <PlusIcon />
+            Add Hostel
+          </button>
+        )}
+      </div>
+
+      <HostelList hostels={sortedHostels} onSelectHostel={setSelectedHostel} />
+    </>
+  );
+
+  const getPageTitle = () => {
+    if (selectedHostel) return selectedHostel.name;
+    if (currentView === 'profile') return 'My Profile';
+    if (currentView === 'settings') return 'Settings';
+    if (currentView === 'chat') return 'Messages';
+    if (currentView === 'roommate-matching') return 'Roommate Matching';
+    if (currentView === 'agreements') return 'Agreements';
+    if (currentView === 'admin') return 'Admin Dashboard';
+    if (currentView === 'rent-estimator') return 'Fair Rent Estimator';
+    return 'Dashboard';
+  }
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'profile':
+        return <Profile user={user} allHostels={hostels} onSwitchRole={handleSwitchRole} onUpdateUser={handleUpdateUser} />;
+      case 'settings':
+        return <Settings user={user} onUpdateUser={handleUpdateUser} theme={theme} toggleTheme={toggleTheme} />;
+      case 'chat':
+        return <ChatDashboard currentUser={user} initialConversationId={initialConversationId} />;
+      case 'roommate-matching':
+        return <RoommateMatchList />;
+      case 'agreements':
+        return <AgreementDashboard user={user} />;
+      case 'admin':
+        return <AdminLayout />;
+      case 'rent-estimator':
+        return <FairRentEstimator onClose={() => setCurrentView('dashboard')} />;
+      case 'dashboard':
+      default:
+        if (selectedHostel) {
+          return (
+            <HostelDetail
+              hostel={selectedHostel}
+              user={user}
+              owner={selectedHostelOwner || undefined}
+              onBack={() => setSelectedHostel(null)}
+              onEdit={handleOpenEditModal}
+              onDelete={handleDeleteHostel}
+              onRate={handleRateHostel}
+              onClearRating={handleClearRating}
+              onMarkAsStayed={handleMarkAsStayed}
+              onMessageOwner={handleMessageOwner}
+            />
+          );
+        }
+        return renderDashboard();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans">
+      {isMenuOpen && <Sidebar user={user} onLogout={handleLogout} onNavigate={handleNavigate} onClose={() => setIsMenuOpen(false)} />}
+
+      <main className="p-4 md:p-8">
+        <header className="relative flex items-center justify-between mb-8 h-16">
+          {/* Left: Menu + Page Title */}
+          <div className="flex items-center gap-4 z-10">
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
+              aria-label="Open menu"
+            >
+              <MenuIcon />
+            </button>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white truncate max-w-[150px] sm:max-w-xs">{getPageTitle()}</h1>
+          </div>
+
+          {/* Center: Logo + App Name */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2 sm:gap-3">
+            <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg shadow-md">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </div>
+            <span className="text-base sm:text-lg md:text-xl font-bold text-gray-800 dark:text-white whitespace-nowrap">Hostel Hub</span>
+          </div>
+
+          {/* Right: Placeholder for balance */}
+          <div className="w-10"></div>
+        </header>
+
+        {renderCurrentView()}
+      </main>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <PropertyListingForm
+          onSubmit={handleSaveHostel}
+          onCancel={() => setIsModalOpen(false)}
+          initialData={editingHostel}
+        />
+      </Modal>
+    </div>
+  );
+};
+
+export default App;

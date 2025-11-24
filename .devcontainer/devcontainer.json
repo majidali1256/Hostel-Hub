@@ -1,0 +1,30 @@
+{
+  "name": "Hostel Hub Dev Container",
+  // Tells VS Code to use your docker-compose file
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
+  // Tells VS Code which service inside the compose file to attach to
+  "service": "app",
+  // The path to your project inside the container
+  "workspaceFolder": "/app",
+  // Forward the Vite port
+  "forwardPorts": [
+    3000
+  ],
+  // Add some useful extensions inside the container
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode-remote.remote-containers"
+      ]
+    }
+  },
+  // Run 'npm install' after the container is created
+  // (Note: Dockerfile already does this, but this is a good fallback)
+  "postCreateCommand": "npm install",
+  // Use the 'node' user from the container, not 'root'
+  "remoteUser": "node"
+}

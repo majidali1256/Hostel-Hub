@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .test {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .pass {
+            border-left: 4px solid green;
+        }
+
+        .fail {
+            border-left: 4px solid red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Hostel Hub Diagnostic</h1>
+    <div id="results"></div>
+    <script>
+        const results = document.getElementById('results');
+
+        function addTest(name, passed, message) {
+            const div = document.createElement('div');
+            div.className = `test ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `<strong>${name}:</strong> ${passed ? '✅ PASS' : '❌ FAIL'}<br>${message}`;
+            results.appendChild(div);
+        }
+
+        // Test 1: Check if React is available
+        try {
+            import('react').then(() => {
+                addTest('React Import', true, 'React is available');
+            }).catch(e => {
+                addTest('React Import', false, `Error: ${e.message}`);
+            });
+        } catch (e) {
+            addTest('React Import', false, `Error: ${e.message}`);
+        }
+
+        // Test 2: Check backend connectivity
+        fetch('http://localhost:5001/api/health')
+            .then(r => addTest('Backend Connection', r.ok, `Status: ${r.status}`))
+            .catch(e => addTest('Backend Connection', false, `Error: ${e.message}`));
+
+        // Test 3: Check if token exists
+        const token = localStorage.getItem('hh_access_token');
+        addTest('Auth Token', !!token, token ? 'Token found in localStorage' : 'No token found');
+
+        // Test 4: Try to load main app
+        setTimeout(() => {
+            const rootDiv = document.getElementById('root');
+            if (rootDiv) {
+                addTest('Root Element', true, 'Root div exists');
+            } else {
+                addTest('Root Element', false, 'Root div not found');
+            }
+        }, 1000);
+
+        // Test 5: Console errors
+        addTest('Console Check', true, 'Open browser console (F12) to see any JavaScript errors');
+    </script>
+</body>
+
+</html>

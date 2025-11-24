@@ -1,0 +1,5 @@
+{
+  "name": "Hostel Hub",
+  "description": "A platform for discovering verified hostels with AI-powered search, simplifying accommodation for students and professionals. This app implements authentication, property listing, and an intelligent search to find the perfect hostel.",
+  "requestFramePermissions": []
+}

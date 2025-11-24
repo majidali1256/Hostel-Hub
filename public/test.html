@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diagnostic Test</title>
+</head>
+<body>
+    <h1>Testing API Endpoints</h1>
+    <div id="results"></div>
+    <script>
+        const token = localStorage.getItem('hh_access_token');
+        const resultsDiv = document.getElementById('results');
+        
+        async function testEndpoint(name, url) {
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                resultsDiv.innerHTML += `<p><strong>${name}:</strong> ${res.status} - ${JSON.stringify(data).substring(0, 100)}</p>`;
+            } catch (error) {
+                resultsDiv.innerHTML += `<p><strong>${name}:</strong> ERROR - ${error.message}</p>`;
+            }
+        }
+        
+        testEndpoint('Conversations', 'http://localhost:5001/api/conversations');
+        testEndpoint('Roommate Matches', 'http://localhost:5001/api/roommate/matches');
+        testEndpoint('Agreements', 'http://localhost:5001/api/agreements');
+    </script>
+</body>
+</html>

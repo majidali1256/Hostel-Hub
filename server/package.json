@@ -1,0 +1,36 @@
+{
+    "name": "hostel-hub-server",
+    "version": "1.0.0",
+    "description": "Backend API for Hostel Hub",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "nodemon index.js"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.5",
+        "crypto": "^1.0.1",
+        "date-fns": "^4.1.0",
+        "dotenv": "^16.4.5",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.2.0",
+        "multer": "^2.0.2",
+        "node-cron": "^4.2.1",
+        "nodemailer": "^7.0.10",
+        "socket.io": "^4.8.1"
+    },
+    "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
+        "@types/jsonwebtoken": "^9.0.10",
+        "axios": "^1.6.0",
+        "jsonwebtoken": "^9.0.0",
+        "mongodb-memory-server": "^10.3.0",
+        "nodemon": "^3.1.0",
+        "passport": "^0.7.0",
+        "passport-facebook": "^3.0.0",
+        "passport-google-oauth20": "^2.0.0"
+    }
+}
