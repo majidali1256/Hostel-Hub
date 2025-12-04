@@ -15,10 +15,11 @@ interface Message {
 interface ChatProps {
     conversationId: string;
     currentUserId: string;
+    chatName?: string;
     onClose?: () => void;
 }
 
-const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, onClose }) => {
+const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, onClose }) => {
     const { socket, isConnected } = useSocket();
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -32,7 +33,7 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, onClose }) =
     useEffect(() => {
         const loadMessages = async () => {
             try {
-                const token = localStorage.getItem('hh_access_token');
+                const token = localStorage.getItem('token');
                 const res = await fetch(`http://localhost:5001/api/conversations/${conversationId}/messages`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -128,8 +129,13 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, onClose }) =
 
         if (!newMessage.trim()) return;
 
+        console.log('Sending message:', newMessage);
+        console.log('Conversation ID:', conversationId);
+
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
+            console.log('Token exists:', !!token);
+
             const res = await fetch('http://localhost:5001/api/messages', {
                 method: 'POST',
                 headers: {
@@ -143,15 +149,26 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, onClose }) =
                 })
             });
 
+            console.log('Send response status:', res.status);
+
             if (res.ok) {
+                const data = await res.json();
+                console.log('Message sent successfully:', data);
                 setNewMessage('');
                 if (socket) {
                     socket.emit('typing:stop', conversationId);
                 }
                 setIsTyping(false);
+                // Manually add message to list if socket didn't do it
+                setMessages(prev => [...prev, data]);
+            } else {
+                const errData = await res.json();
+                console.error('Send failed:', errData);
+                alert(`Failed to send message: ${errData.error || 'Unknown error'}`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to send message:', error);
+            alert(`Error sending message: ${error.message}`);
         }
     };
 
@@ -169,7 +186,7 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, onClose }) =
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Chat</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{chatName || 'Chat'}</h3>
                 </div>
                 {onClose && (
                     <button
@@ -248,16 +265,22 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, onClose }) =
                         type="text"
                         value={newMessage}
                         onChange={(e) => {
+                            console.log('Input changed:', e.target.value);
                             setNewMessage(e.target.value);
-                            handleTyping();
+                            try {
+                                handleTyping();
+                            } catch (err) {
+                                console.error('handleTyping error:', err);
+                            }
                         }}
                         placeholder="Type a message..."
-                        className="flex-1 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                        disabled={!isConnected}
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        disabled={false}
                     />
                     <button
                         type="submit"
-                        disabled={!newMessage.trim() || !isConnected}
+                        disabled={false}
+                        onClick={() => console.log('Send button clicked')}
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         Send

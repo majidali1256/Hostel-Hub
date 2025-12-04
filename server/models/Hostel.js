@@ -11,6 +11,7 @@ const hostelSchema = new mongoose.Schema({
     name: { type: String, required: true },
     location: { type: String, required: true },
     price: { type: Number, required: true },
+    capacity: { type: Number, default: 1 },
     description: String,
     amenities: [String], // e.g., ['WiFi', 'Kitchen', 'Parking', 'AC', 'Laundry']
     category: {
@@ -32,8 +33,24 @@ const hostelSchema = new mongoose.Schema({
     reviews: [reviewSchema],
     ownerId: { type: String, required: true },
     verified: { type: Boolean, default: false },
-    images: [String]
+    images: [String],
+    videos: [String], // Array of video file paths
+    tour360: [String], // Array of 360 image file paths
+    coordinates: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            default: [0, 0]
+        }
+    }
 }, { timestamps: true });
+
+// Create 2dsphere index for geospatial queries
+hostelSchema.index({ coordinates: '2dsphere' });
 
 // Calculate average rating from reviews
 hostelSchema.methods.calculateAverageRating = function () {

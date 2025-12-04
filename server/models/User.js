@@ -22,7 +22,26 @@ const userSchema = new mongoose.Schema({
     emailVerified: { type: Boolean, default: false },
     verificationToken: String,
     resetPasswordToken: String,
-    resetPasswordExpires: Date
+    resetPasswordExpires: Date,
+    // Identity Verification
+    verificationStatus: {
+        type: String,
+        enum: ['unverified', 'pending', 'verified', 'rejected'],
+        default: 'unverified'
+    },
+    idDocument: String, // Path to uploaded document
+    verificationDate: Date,
+    rejectionReason: String,
+    // Bank details for Pakistani payment system
+    bankDetails: {
+        bankName: String, // HBL, UBL, Meezan, Allied, MCB, etc.
+        accountTitle: String,
+        accountNumber: String,
+        iban: String,
+        jazzCashNumber: String,
+        easyPaisaNumber: String,
+        verified: { type: Boolean, default: false } // Admin verified
+    }
 }, { timestamps: true });
 
 // Hash password before saving

@@ -2,7 +2,10 @@ const Booking = require('../models/Booking');
 const Availability = require('../models/Availability');
 
 // Check if dates are available for booking
-async function checkAvailability(hostelId, checkIn, checkOut) {
+const Hostel = require('../models/Hostel');
+
+// Check if dates are available for booking
+async function checkAvailability(hostelId, checkIn, checkOut, numberOfGuests = 1) {
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
 
@@ -13,6 +16,12 @@ async function checkAvailability(hostelId, checkIn, checkOut) {
 
     if (checkInDate < new Date()) {
         throw new Error('Check-in date must be in the future');
+    }
+
+    // Get hostel details for capacity
+    const hostel = await Hostel.findById(hostelId);
+    if (!hostel) {
+        throw new Error('Hostel not found');
     }
 
     // Get availability settings
@@ -63,8 +72,38 @@ async function checkAvailability(hostelId, checkIn, checkOut) {
         ]
     });
 
-    if (conflictingBookings.length > 0) {
-        return { available: false, reason: 'Dates conflict with existing booking' };
+    // If no conflicts, it's available
+    if (conflictingBookings.length === 0) {
+        return { available: true };
+    }
+
+    // Check capacity day by day
+    // We need to ensure that for every day in the requested range, 
+    // (existing guests + new guests) <= capacity
+
+    const capacity = hostel.capacity || 1; // Default to 1 if not set
+
+    // Iterate through each day of the requested booking
+    for (let d = new Date(checkInDate); d < checkOutDate; d.setDate(d.getDate() + 1)) {
+        let guestsOnThisDay = 0;
+
+        // Sum guests from all overlapping bookings for this day
+        for (const booking of conflictingBookings) {
+            const bCheckIn = new Date(booking.checkIn);
+            const bCheckOut = new Date(booking.checkOut);
+
+            // If booking covers this day
+            if (d >= bCheckIn && d < bCheckOut) {
+                guestsOnThisDay += (booking.numberOfGuests || 1);
+            }
+        }
+
+        if (guestsOnThisDay + numberOfGuests > capacity) {
+            return {
+                available: false,
+                reason: `Hostel is fully booked on ${d.toLocaleDateString()} (Capacity: ${capacity}, Booked: ${guestsOnThisDay})`
+            };
+        }
     }
 
     return { available: true };

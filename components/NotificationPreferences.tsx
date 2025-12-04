@@ -40,7 +40,7 @@ const NotificationPreferencesPage: React.FC = () => {
 
     const loadPreferences = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch('http://localhost:5001/api/notifications/preferences', {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -62,7 +62,7 @@ const NotificationPreferencesPage: React.FC = () => {
         setMessage(null);
 
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch('http://localhost:5001/api/notifications/preferences', {
                 method: 'PATCH',
                 headers: {

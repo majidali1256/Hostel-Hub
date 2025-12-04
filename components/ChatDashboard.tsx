@@ -51,10 +51,15 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
     }
 
     if (selectedConversationId) {
+        const selectedConv = conversations.find(c => c._id === selectedConversationId);
+        const otherParticipant = selectedConv?.participants.find((p: any) => p._id !== currentUser.id);
+        const chatName = selectedConv?.hostelId ? selectedConv.hostelId.name : `${otherParticipant?.firstName} ${otherParticipant?.lastName}`;
+
         return (
             <Chat
                 conversationId={selectedConversationId}
                 currentUserId={currentUser.id}
+                chatName={chatName}
                 onClose={() => setSelectedConversationId(null)}
             />
         );
@@ -96,7 +101,7 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-1">
                                         <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                                            {otherParticipant?.firstName} {otherParticipant?.lastName}
+                                            {conv.hostelId ? conv.hostelId.name : `${otherParticipant?.firstName} ${otherParticipant?.lastName}`}
                                         </h3>
                                         {conv.lastMessage && (
                                             <span className="text-xs text-gray-500 dark:text-gray-400">

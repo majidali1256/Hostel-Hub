@@ -5,7 +5,7 @@ const API_URL = 'http://localhost:5001/api';
 
 // Helper to get auth headers
 const getAuthHeaders = (): HeadersInit => {
-    const token = localStorage.getItem('hh_access_token');
+    const token = localStorage.getItem('token');
     return {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })
@@ -25,45 +25,66 @@ export const api = {
                 throw new Error(err.error || 'Login failed');
             }
             const data = await res.json();
-            localStorage.setItem('hh_access_token', data.accessToken);
-            localStorage.setItem('hh_refresh_token', data.refreshToken);
-            localStorage.setItem('hh_user_id', data.user.id);
+            localStorage.setItem('token', data.accessToken);
+            localStorage.setItem('refreshToken', data.refreshToken);
+            localStorage.setItem('userId', data.user.id);
             return data.user;
         },
-        signup: async (email: string, password?: string, additionalData?: any) => {
+        signup: async (email: string, password?: string, userData?: any) => {
             const res = await fetch(`${API_URL}/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, ...additionalData })
+                body: JSON.stringify({ email, password, ...userData })
             });
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.error || 'Signup failed');
             }
             const data = await res.json();
-            // Don't store tokens on signup - user needs to login
-            return { uid: data.user.id, email: data.user.email, ...data.user };
+            localStorage.setItem('token', data.accessToken);
+            localStorage.setItem('refreshToken', data.refreshToken);
+            localStorage.setItem('userId', data.user.id);
+            return data.user;
         },
         onAuthStateChanged: (callback: (user: User | null) => void) => {
-            const token = localStorage.getItem('hh_access_token');
-            const userId = localStorage.getItem('hh_user_id');
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
 
             if (token && userId) {
                 fetch(`${API_URL}/users/${userId}`, {
                     headers: getAuthHeaders()
                 })
-                    .then(res => res.ok ? res.json() : null)
-                    .then(user => callback(user))
-                    .catch(() => callback(null));
+                    .then(res => {
+                        // Only logout if authentication actually failed (401)
+                        if (res.status === 401) {
+                            // Token is invalid, clear auth and logout
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('refreshToken');
+                            localStorage.removeItem('userId');
+                            callback(null);
+                        } else if (res.ok) {
+                            // Successfully got user data
+                            return res.json().then(user => callback(user));
+                        } else {
+                            // Other errors (500, 404, etc.) - keep user logged in
+                            console.warn('Failed to fetch user profile, but keeping session active');
+                            // Don't call callback - keep existing auth state
+                        }
+                    })
+                    .catch((error) => {
+                        // Network error - keep user logged in
+                        console.warn('Network error fetching user, keeping session active:', error);
+                        // Don't call callback - keep existing auth state
+                    });
             } else {
                 callback(null);
             }
             return () => { };
         },
         signOut: async () => {
-            localStorage.removeItem('hh_access_token');
-            localStorage.removeItem('hh_refresh_token');
-            localStorage.removeItem('hh_user_id');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userId');
             window.location.reload();
         },
         forgotPassword: async (email: string) => {
@@ -101,7 +122,7 @@ export const api = {
         setUser: async (id: string, data: Partial<User> | FormData) => {
             const isFormData = data instanceof FormData;
             const headers: HeadersInit = isFormData
-                ? { 'Authorization': `Bearer ${localStorage.getItem('hh_access_token')}` }
+                ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 : getAuthHeaders();
             const body = isFormData ? data : JSON.stringify(data);
 
@@ -118,18 +139,41 @@ export const api = {
                     headers: getAuthHeaders()
                 })
                     .then(res => res.json())
-                    .then(data => callback(data))
-                    .catch(console.error);
+                    .then(data => {
+                        if (Array.isArray(data)) {
+                            callback(data);
+                        } else {
+                            console.error('Failed to fetch hostels:', data);
+                            callback([]);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error fetching hostels:', err);
+                        callback([]);
+                    });
             };
             fetchHostels();
             const interval = setInterval(fetchHostels, 5000);
             return () => clearInterval(interval);
         },
-        addHostel: async (hostel: Omit<Hostel, 'id'>) => {
+        getHostel: async (id: string) => {
+            const res = await fetch(`${API_URL}/hostels/${id}`, {
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) return null;
+            return await res.json();
+        },
+        addHostel: async (hostel: Omit<Hostel, 'id'> | FormData) => {
+            const isFormData = hostel instanceof FormData;
+            const headers = isFormData
+                ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                : getAuthHeaders();
+            const body = isFormData ? hostel : JSON.stringify(hostel);
+
             const res = await fetch(`${API_URL}/hostels`, {
                 method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify(hostel)
+                headers: headers,
+                body: body
             });
             if (!res.ok) {
                 const err = await res.json();
@@ -137,21 +181,69 @@ export const api = {
             }
             return await res.json();
         },
-        updateHostel: async (hostel: Hostel) => {
-            await fetch(`${API_URL}/hostels/${hostel.id}`, {
+        updateHostel: async (hostel: Hostel | FormData) => {
+            let id: string;
+            let body: string | FormData;
+            let headers: HeadersInit;
+
+            if (hostel instanceof FormData) {
+                id = hostel.get('id') as string;
+                body = hostel;
+                headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+            } else {
+                id = hostel.id;
+                body = JSON.stringify(hostel);
+                headers = getAuthHeaders();
+            }
+
+            const res = await fetch(`${API_URL}/hostels/${id}`, {
                 method: 'PUT',
-                headers: getAuthHeaders(),
-                body: JSON.stringify(hostel)
+                headers: headers,
+                body: body
             });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to update hostel');
+            }
+            return await res.json();
         },
         deleteHostel: async (id: string) => {
             await fetch(`${API_URL}/hostels/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
+        },
+        addReview: async (hostelId: string, review: { rating: number; comment: string }) => {
+            const res = await fetch(`${API_URL}/hostels/${hostelId}/reviews`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(review)
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to add review');
+            }
+            return await res.json();
+        },
+        deleteReview: async (hostelId: string) => {
+            const res = await fetch(`${API_URL}/hostels/${hostelId}/reviews`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to delete review');
+            }
+            return await res.json();
         }
     },
     bookings: {
+        getMyBookings: async () => {
+            const res = await fetch(`${API_URL}/bookings/my-bookings`, {
+                headers: getAuthHeaders()
+            });
+            return await res.json();
+        },
         create: async (booking: any) => {
             const res = await fetch(`${API_URL}/bookings`, {
                 method: 'POST',
@@ -205,6 +297,36 @@ export const api = {
                 throw new Error(err.error || 'Failed to cancel booking');
             }
             return await res.json();
+        },
+        updateStatus: async (id: string, status: string, cancelReason?: string) => {
+            const res = await fetch(`${API_URL}/bookings/${id}/status`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ status, cancelReason })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to update booking status');
+            }
+            return await res.json();
+        },
+        uploadReceipt: async (id: string, receiptFile: File) => {
+            const formData = new FormData();
+            formData.append('receipt', receiptFile);
+
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/bookings/${id}/payment-receipt`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to upload receipt');
+            }
         },
         checkAvailability: async (hostelId: string, checkIn: string, checkOut: string) => {
             const res = await fetch(`${API_URL}/bookings/check-availability`, {
@@ -836,6 +958,111 @@ export const api = {
                 const err = await res.json();
                 throw new Error(err.error || 'Failed to update setting');
             }
+            return await res.json();
+        }
+    },
+    verification: {
+        uploadDocument: async (file: File) => {
+            const formData = new FormData();
+            formData.append('document', file);
+            const res = await fetch(`${API_URL}/verification/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to upload document');
+            }
+            return await res.json();
+        },
+        getStatus: async () => {
+            const res = await fetch(`${API_URL}/verification/status`, {
+                headers: getAuthHeaders()
+            });
+            return await res.json();
+        },
+        // Admin methods
+        getAllRequests: async (status?: string) => {
+            const params = status ? `?status=${status}` : '';
+            const res = await fetch(`${API_URL}/verification/admin/all${params}`, {
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to fetch verification requests');
+            }
+            return await res.json();
+        },
+        approveUser: async (userId: string) => {
+            const res = await fetch(`${API_URL}/verification/review/${userId}`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ status: 'verified' })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to approve user');
+            }
+            return await res.json();
+        },
+        rejectUser: async (userId: string, reason: string) => {
+            const res = await fetch(`${API_URL}/verification/review/${userId}`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ status: 'rejected', reason })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to reject user');
+            }
+            return await res.json();
+        }
+    },
+    search: {
+        filterHostels: async (filters: any) => {
+            const params = new URLSearchParams();
+            if (filters.priceRange) {
+                params.append('minPrice', filters.priceRange[0].toString());
+                params.append('maxPrice', filters.priceRange[1].toString());
+            }
+            if (filters.amenities?.length) {
+                params.append('amenities', filters.amenities.join(','));
+            }
+            if (filters.roomCategories?.length) {
+                params.append('roomCategories', filters.roomCategories.join(','));
+            }
+            if (filters.genderPreference && filters.genderPreference !== 'any') {
+                params.append('genderPreference', filters.genderPreference);
+            }
+            if (filters.minRating) {
+                params.append('minRating', filters.minRating.toString());
+            }
+            if (filters.verifiedOnly) {
+                params.append('verifiedOnly', 'true');
+            }
+
+            const res = await fetch(`${API_URL}/hostels/search?${params.toString()}`);
+            if (!res.ok) throw new Error('Search failed');
+            return await res.json();
+        },
+        getNearby: async (lat: number, lng: number, radius?: number) => {
+            const params = new URLSearchParams({
+                lat: lat.toString(),
+                lng: lng.toString(),
+                ...(radius && { radius: radius.toString() })
+            });
+            const res = await fetch(`${API_URL}/hostels/nearby?${params.toString()}`);
+            if (!res.ok) throw new Error('Nearby search failed');
+            return await res.json();
+        },
+        getRecommendations: async () => {
+            const res = await fetch(`${API_URL}/hostels/recommendations`, {
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to get recommendations');
             return await res.json();
         }
     }

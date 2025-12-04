@@ -44,7 +44,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     const loadNotifications = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const unreadOnly = filter === 'unread' ? '?unreadOnly=true' : '';
             const res = await fetch(`http://localhost:5001/api/notifications${unreadOnly}`, {
                 headers: {
@@ -63,7 +63,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     const markAsRead = async (id: string) => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             await fetch(`http://localhost:5001/api/notifications/${id}/read`, {
                 method: 'PATCH',
                 headers: {
@@ -81,7 +81,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     const markAllAsRead = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             await fetch('http://localhost:5001/api/notifications/read-all', {
                 method: 'PATCH',
                 headers: {
@@ -97,7 +97,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     const deleteNotification = async (id: string) => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             await fetch(`http://localhost:5001/api/notifications/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -171,8 +171,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                         <button
                             onClick={() => setFilter('all')}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'all'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             All
@@ -180,8 +180,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                         <button
                             onClick={() => setFilter('unread')}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'unread'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             Unread ({unreadCount})

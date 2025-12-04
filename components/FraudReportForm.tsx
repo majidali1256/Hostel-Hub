@@ -37,7 +37,7 @@ const FraudReportForm: React.FC<FraudReportFormProps> = ({
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch('http://localhost:5001/api/fraud/report', {
                 method: 'POST',
                 headers: {
@@ -133,8 +133,8 @@ const FraudReportForm: React.FC<FraudReportFormProps> = ({
                                 <label
                                     key={type.value}
                                     className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-colors ${formData.type === type.value
-                                            ? 'border-red-600 bg-red-50'
-                                            : 'border-gray-200 hover:border-gray-300'
+                                        ? 'border-red-600 bg-red-50'
+                                        : 'border-gray-200 hover:border-gray-300'
                                         }`}
                                 >
                                     <input

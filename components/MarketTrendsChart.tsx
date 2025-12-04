@@ -34,7 +34,7 @@ const MarketTrendsChart: React.FC<MarketTrendsChartProps> = ({ location }) => {
 
     const loadTrends = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch(`http://localhost:5001/api/price/market/${encodeURIComponent(location)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -52,7 +52,7 @@ const MarketTrendsChart: React.FC<MarketTrendsChartProps> = ({ location }) => {
 
     const loadForecast = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch(`http://localhost:5001/api/price/forecast/${encodeURIComponent(location)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -245,8 +245,8 @@ const MarketTrendsChart: React.FC<MarketTrendsChartProps> = ({ location }) => {
                         <div>
                             <p className="text-sm text-gray-600">Trend</p>
                             <p className={`text-2xl font-bold capitalize ${forecast.trend === 'increasing' ? 'text-green-600' :
-                                    forecast.trend === 'decreasing' ? 'text-red-600' :
-                                        'text-gray-600'
+                                forecast.trend === 'decreasing' ? 'text-red-600' :
+                                    'text-gray-600'
                                 }`}>
                                 {forecast.trend}
                             </p>

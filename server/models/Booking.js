@@ -39,10 +39,29 @@ const bookingSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['unpaid', 'partial', 'paid', 'refunded'],
-        default: 'unpaid'
+        enum: ['pending', 'submitted', 'verified', 'rejected'],
+        default: 'pending'
     },
+    // Pakistani payment system
+    paymentMethod: {
+        type: String,
+        enum: ['bank_transfer', 'jazzcash', 'easypaisa', 'other'],
+    },
+    paymentReceipt: {
+        image: String, // Base64 or file path
+        uploadedAt: Date,
+        verified: Boolean,
+        verifiedBy: mongoose.Schema.Types.ObjectId,
+        verifiedAt: Date,
+        rejectionReason: String
+    },
+    transactionId: String, // Customer's transaction reference number
+    // Timestamps
     createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
         type: Date,
         default: Date.now
     },

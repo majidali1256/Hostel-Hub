@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { User, Hostel } from '../types';
 import Button from './Button';
 import Input from './Input';
+import BankDetailsForm from './BankDetailsForm';
+import IdentityVerification from './IdentityVerification';
 
 interface ProfileProps {
   user: User;
@@ -17,12 +19,34 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
   const [contactNumber, setContactNumber] = useState(user.contactNumber || '');
   const [email, setEmail] = useState(user.email || '');
 
+  const [trustScore, setTrustScore] = useState<any>(null);
+
   useEffect(() => {
     setFirstName(user.firstName || '');
     setLastName(user.lastName || '');
     setContactNumber(user.contactNumber || '');
     setEmail(user.email || '');
+    fetchTrustScore();
   }, [user]);
+
+  const fetchTrustScore = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      // Only fetch if user is logged in
+      if (user.id) {
+        const response = await fetch(`${apiUrl}/api/fraud/trust-score/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setTrustScore(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching trust score:', error);
+    }
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +68,20 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
     const userRating = hostel.ratings?.find(r => r.userId === user.id);
     return userRating ? { ...hostel, userRating: userRating.score } : null;
   }).filter(Boolean) as (Hostel & { userRating: number })[];
+
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-green-600 bg-green-100 border-green-200';
+    if (score >= 70) return 'text-blue-600 bg-blue-100 border-blue-200';
+    if (score >= 50) return 'text-yellow-600 bg-yellow-100 border-yellow-200';
+    return 'text-red-600 bg-red-100 border-red-200';
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 90) return 'Trusted User 🌟';
+    if (score >= 70) return 'Verified User ✅';
+    if (score >= 50) return 'Standard User';
+    return 'High Risk ⚠️';
+  };
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -78,7 +116,14 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
               </button>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{user.firstName} {user.lastName}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{user.firstName} {user.lastName}</h1>
+                {trustScore && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getScoreColor(trustScore.score)}`}>
+                    {getScoreLabel(trustScore.score)}
+                  </span>
+                )}
+              </div>
               <p className="text-gray-500 dark:text-gray-400">@{user.username}</p>
               <button
                 onClick={() => document.getElementById('profilePictureInput')?.click()}
@@ -98,6 +143,61 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
           </div>
         </div>
       </div>
+
+      {/* Trust Score Card - Only for Owners */}
+      {user.role === 'owner' && trustScore && (
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200">Trust Score</h2>
+            <div className="text-right">
+              <span className={`text-3xl font-bold ${trustScore.score >= 90 ? 'text-green-600' :
+                trustScore.score >= 70 ? 'text-blue-600' :
+                  trustScore.score >= 50 ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                {trustScore.score}
+              </span>
+              <span className="text-gray-400 text-lg">/100</span>
+            </div>
+          </div>
+
+          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-6">
+            <div
+              className={`h-2.5 rounded-full ${trustScore.score >= 90 ? 'bg-green-600' :
+                trustScore.score >= 70 ? 'bg-blue-600' :
+                  trustScore.score >= 50 ? 'bg-yellow-600' : 'bg-red-600'
+                }`}
+              style={{ width: `${trustScore.score}%` }}
+            ></div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Account Age</p>
+              <p className="font-semibold text-gray-800 dark:text-white">
+                {trustScore.factors?.accountAge > 0 ? 'Verified' : 'New'}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Identity</p>
+              <p className="font-semibold text-gray-800 dark:text-white">
+                {trustScore.factors?.verificationStatus > 0 ? 'Verified' : 'Pending'}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Activity</p>
+              <p className="font-semibold text-gray-800 dark:text-white">
+                {trustScore.factors?.activityPattern > 0 ? 'Good' : 'Neutral'}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Reports</p>
+              <p className="font-semibold text-gray-800 dark:text-white">
+                {trustScore.factors?.reportHistory === 0 ? 'Clean' : 'Flagged'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User Details Card */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
@@ -122,26 +222,36 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
         )}
       </div>
 
+      {/* Identity Verification Section */}
+      <IdentityVerification />
+
       {/* Role-specific content */}
       {user.role === 'owner' ? (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">My Hostel Listings ({userHostels.length})</h2>
-          {userHostels.length > 0 ? (
-            <ul className="space-y-4">
-              {userHostels.map(hostel => (
-                <li key={hostel.id} className="p-4 border dark:border-gray-700 rounded-lg flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-gray-800 dark:text-white">{hostel.name}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{hostel.location}</p>
-                  </div>
-                  <p className="font-semibold text-blue-600 dark:text-blue-400">PKR {hostel.price.toLocaleString()}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400">You haven't listed any hostels yet.</p>
-          )}
-        </div>
+        <>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
+            <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">My Hostel Listings ({userHostels.length})</h2>
+            {userHostels.length > 0 ? (
+              <ul className="space-y-4">
+                {userHostels.map(hostel => (
+                  <li key={hostel.id} className="p-4 border dark:border-gray-700 rounded-lg flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-gray-800 dark:text-white">{hostel.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{hostel.location}</p>
+                    </div>
+                    <p className="font-semibold text-blue-600 dark:text-blue-400">PKR {hostel.price.toLocaleString()}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">You haven't listed any hostels yet.</p>
+            )}
+          </div>
+
+          {/* Bank Details Section for Owners */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+            <BankDetailsForm />
+          </div>
+        </>
       ) : (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">My Rated Hostels ({ratedHostels.length})</h2>

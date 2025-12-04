@@ -3,9 +3,11 @@ import Button from './Button';
 import Input from './Input';
 import { User } from '../types';
 import { api } from '../services/mongoService';
+import axios from 'axios';
 
 interface LoginProps {
   onSignUpSubmit: (uid: string, userData: Omit<User, 'id' | 'role'>) => void;
+  onLoginSuccess?: (user: User) => void;
 }
 
 const GoogleIcon = () => (
@@ -27,7 +29,7 @@ const AppleIcon = () => (
   </svg>
 );
 
-const Login: React.FC<LoginProps> = ({ onSignUpSubmit }) => {
+const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
   const [view, setView] = useState<'login' | 'signup' | 'forgotPassword' | 'resetPassword'>('login');
 
   const [username, setUsername] = useState('');
@@ -65,10 +67,39 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit }) => {
     setIsLoading(true);
 
     try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
       if (view === 'login') {
-        await api.auth.login(email.trim(), password);
-        // Reload page to trigger auth state change
-        window.location.reload();
+        // Real backend login
+        console.log('Login: Sending login request...');
+        const response = await axios.post(`${apiUrl}/api/auth/login`, {
+          email: email.trim(),
+          password
+        });
+        console.log('Login: Response received', response.data);
+
+        const { accessToken, refreshToken, user } = response.data;
+
+        // Store tokens in localStorage
+        localStorage.setItem('token', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('userId', user._id || user.id);
+
+        // Call parent callback with user data
+        if (onLoginSuccess) {
+          console.log('Login: Calling onLoginSuccess');
+          onLoginSuccess({
+            id: user._id || user.id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            contactNumber: user.contactNumber || '',
+            role: user.role,
+            stayHistory: user.stayHistory || [],
+            profilePicture: user.profilePicture
+          });
+        }
       } else if (view === 'signup') {
         if (password !== confirmPassword) {
           throw new Error("Passwords do not match.");
@@ -81,19 +112,46 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit }) => {
           throw new Error("Password must contain at least one capital letter and one special character.");
         }
 
-        const { uid } = await api.auth.signup(email.trim(), password, {
+        // Real backend signup
+        const signupResponse = await axios.post(`${apiUrl}/api/auth/signup`, {
+          email: email.trim(),
+          password,
           username: username.trim(),
           firstName,
           lastName,
           contactNumber,
           role
         });
-        console.log("Signup successful, uid:", uid);
-        // Clear localStorage to prevent auto-login
-        localStorage.removeItem('hh_user_id');
-        // Show success message and redirect to login
-        setMessage('Account created successfully! Please log in.');
-        setView('login');
+
+        console.log("Signup successful:", signupResponse.data);
+
+        // Auto-login after successful signup
+        const loginResponse = await axios.post(`${apiUrl}/api/auth/login`, {
+          email: email.trim(),
+          password
+        });
+
+        const { accessToken, refreshToken, user } = loginResponse.data;
+
+        // Store tokens in localStorage
+        localStorage.setItem('token', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('userId', user._id || user.id);
+
+        // Call parent callback with user data
+        if (onLoginSuccess) {
+          onLoginSuccess({
+            id: user._id || user.id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            contactNumber: user.contactNumber || '',
+            role: user.role,
+            stayHistory: user.stayHistory || [],
+            profilePicture: user.profilePicture
+          });
+        }
       } else if (view === 'forgotPassword') {
         // Call forgot password API
         await api.auth.forgotPassword(email);
@@ -109,7 +167,8 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit }) => {
         setView('login');
       }
     } catch (err: any) {
-      setError(err.message);
+      const errorMessage = err.response?.data?.error || err.message || 'An error occurred';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

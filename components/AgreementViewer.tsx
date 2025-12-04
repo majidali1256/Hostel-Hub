@@ -15,7 +15,7 @@ const AgreementViewer: React.FC<AgreementViewerProps> = ({ agreementId, onClose 
     useEffect(() => {
         loadAgreement();
         // Mock current user - in real app get from context
-        const token = localStorage.getItem('accessToken');
+        const token = localStorage.getItem('hh_access_token');
         if (token) {
             // Decode token or fetch user profile
             // setCurrentUser(...)
@@ -24,7 +24,7 @@ const AgreementViewer: React.FC<AgreementViewerProps> = ({ agreementId, onClose 
 
     const loadAgreement = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch(`http://localhost:5001/api/agreements/${agreementId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -39,7 +39,7 @@ const AgreementViewer: React.FC<AgreementViewerProps> = ({ agreementId, onClose 
 
     const handleSign = async (signatureData: { type: string; data: string }) => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             await fetch(`http://localhost:5001/api/agreements/${agreementId}/sign`, {
                 method: 'POST',
                 headers: {

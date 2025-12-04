@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -18,7 +18,11 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hostel
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads')); // Serve uploaded files
+
+const verificationRoutes = require('./routes/verificationRoutes');
+app.use('/api/verification', verificationRoutes);
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
@@ -93,20 +97,34 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 });
 
-// OAuth routes
-app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account consent' }));
-app.get('/api/auth/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/login' }), (req, res) => {
-    const { accessToken, refreshToken } = req.user.tokens || {};
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/oauth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`);
-});
+// OAuth routes - only register if credentials are configured
+if (process.env.GOOGLE_CLIENT_ID) {
+    app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account consent' }));
+    app.get('/api/auth/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/login' }), (req, res) => {
+        const { accessToken, refreshToken } = req.user.tokens || {};
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        res.redirect(`${frontendUrl}/oauth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`);
+    });
+} else {
+    // Return error if OAuth is not configured
+    app.get('/api/auth/google', (req, res) => {
+        res.status(501).json({ error: 'Google OAuth is not configured on this server' });
+    });
+}
 
-app.get('/api/auth/facebook', passport.authenticate('facebook'));
-app.get('/api/auth/facebook/callback', passport.authenticate('facebook', { session: false, failureRedirect: '/login' }), (req, res) => {
-    const { accessToken, refreshToken } = req.user.tokens || {};
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/oauth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`);
-});
+if (process.env.FACEBOOK_APP_ID) {
+    app.get('/api/auth/facebook', passport.authenticate('facebook'));
+    app.get('/api/auth/facebook/callback', passport.authenticate('facebook', { session: false, failureRedirect: '/login' }), (req, res) => {
+        const { accessToken, refreshToken } = req.user.tokens || {};
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        res.redirect(`${frontendUrl}/oauth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`);
+    });
+} else {
+    // Return error if OAuth is not configured
+    app.get('/api/auth/facebook', (req, res) => {
+        res.status(501).json({ error: 'Facebook OAuth is not configured on this server' });
+    });
+}
 
 app.post('/api/auth/login', async (req, res) => {
     try {
@@ -244,6 +262,33 @@ app.get('/api/users/:id', async (req, res) => {
     }
 });
 
+// Update user bank details
+app.put('/api/users/bank-details', authMiddleware, async (req, res) => {
+    try {
+        const { bankName, accountTitle, accountNumber, iban, jazzCashNumber, easyPaisaNumber } = req.body;
+
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        user.bankDetails = {
+            bankName,
+            accountTitle,
+            accountNumber,
+            iban,
+            jazzCashNumber,
+            easyPaisaNumber,
+            verified: user.bankDetails?.verified || false
+        };
+
+        await user.save();
+        res.json({ message: 'Bank details updated successfully', bankDetails: user.bankDetails });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.post('/api/users/:id', upload.single('profilePicture'), async (req, res) => {
     try {
         let updateData = req.body;
@@ -263,21 +308,197 @@ app.post('/api/users/:id', upload.single('profilePicture'), async (req, res) => 
     }
 });
 
+
 // Hostel Routes
-app.get('/api/hostels', async (req, res) => {
+
+// Advanced search with filters
+app.get('/api/hostels/search', async (req, res) => {
     try {
-        const hostels = await Hostel.find();
+        const {
+            minPrice,
+            maxPrice,
+            amenities,
+            roomCategories,
+            genderPreference,
+            minRating,
+            verifiedOnly,
+            location
+        } = req.query;
+
+        const query = {};
+
+        // Price range filter
+        if (minPrice || maxPrice) {
+            query.price = {};
+            if (minPrice) query.price.$gte = parseInt(minPrice);
+            if (maxPrice) query.price.$lte = parseInt(maxPrice);
+        }
+
+        // Amenities filter (must have ALL selected amenities)
+        if (amenities) {
+            const amenitiesList = Array.isArray(amenities) ? amenities : amenities.split(',');
+            query.amenities = { $all: amenitiesList };
+        }
+
+        // Room categories filter
+        if (roomCategories) {
+            const categoriesList = Array.isArray(roomCategories) ? roomCategories : roomCategories.split(',');
+            query.category = { $in: categoriesList };
+        }
+
+        // Gender preference filter
+        if (genderPreference && genderPreference !== 'any') {
+            query.genderPreference = { $in: [genderPreference, 'any'] };
+        }
+
+        // Verified only filter
+        if (verifiedOnly === 'true') {
+            query.verified = true;
+        }
+
+        // Location search (contains)
+        if (location) {
+            query.location = { $regex: location, $options: 'i' };
+        }
+
+        const hostels = await Hostel.find(query);
+
+        // Filter by minimum rating (client-side calculation since it's based on reviews)
+        if (minRating) {
+            const minRatingNum = parseFloat(minRating);
+            const filtered = hostels.filter(h => (h.rating || 0) >= minRatingNum);
+            return res.json(filtered);
+        }
+
         res.json(hostels);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Only owners can create hostels
-app.post('/api/hostels', authMiddleware, roleMiddleware('owner', 'admin'), async (req, res) => {
+// Get nearby hostels (geospatial query)
+app.get('/api/hostels/nearby', async (req, res) => {
     try {
+        const { lat, lng, radius = 5000 } = req.query; // radius in meters
+
+        if (!lat || !lng) {
+            return res.status(400).json({ error: 'Latitude and longitude required' });
+        }
+
+        const hostels = await Hostel.find({
+            coordinates: {
+                $near: {
+                    $geometry: {
+                        type: 'Point',
+                        coordinates: [parseFloat(lng), parseFloat(lat)]
+                    },
+                    $maxDistance: parseInt(radius)
+                }
+            }
+        });
+
+        res.json(hostels);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get AI-powered recommendations
+app.get('/api/hostels/recommendations', authMiddleware, async (req, res) => {
+    try {
+        const { generateRecommendations } = require('./utils/geminiService');
+
+        // Get user profile
+        const user = await User.findById(req.user.userId);
+
+        // Build user profile for AI
+        const userProfile = {
+            minBudget: 5000,
+            maxBudget: user.budget || 30000,
+            preferredAmenities: [],
+            bookingCount: user.bookings?.length || 0,
+            preferredLocation: user.location || '',
+            gender: user.gender || 'any'
+        };
+
+        // Get all available hostels
+        const hostels = await Hostel.find({ status: 'Available' });
+
+        // Generate recommendations using Gemini AI
+        const recommendations = await generateRecommendations(userProfile, hostels);
+
+        res.json(recommendations);
+    } catch (error) {
+        console.error('Recommendations error:', error);
+        // Fallback: return top-rated hostels
+        const topHostels = await Hostel.find({ status: 'Available' })
+            .sort({ rating: -1 })
+            .limit(5);
+
+        res.json(topHostels.map((h, i) => ({
+            hostel: h,
+            rank: i + 1,
+            reason: 'Highly rated hostel'
+        })));
+    }
+});
+
+app.get('/api/hostels', async (req, res) => {
+    try {
+        // Optimize: Only fetch the first image for the list view to reduce payload size
+        const hostels = await Hostel.find({}, {
+            name: 1,
+            location: 1,
+            price: 1,
+            rating: 1,
+            reviews: 1,
+            amenities: 1,
+            category: 1,
+            status: 1,
+            genderPreference: 1,
+            verified: 1,
+            ownerId: 1,
+            images: { $slice: 1 },
+            coordinates: 1
+        });
+        res.json(hostels);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Configure upload middleware for hostels
+const hostelUpload = upload.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'videos', maxCount: 2 },
+    { name: 'tour360', maxCount: 5 }
+]);
+
+// Only owners can create hostels
+app.post('/api/hostels', authMiddleware, roleMiddleware('owner', 'admin'), hostelUpload, async (req, res) => {
+    try {
+        const hostelData = { ...req.body };
+
+        // Handle file uploads
+        if (req.files) {
+            if (req.files.images) {
+                hostelData.images = req.files.images.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+            }
+            if (req.files.videos) {
+                hostelData.videos = req.files.videos.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+            }
+            if (req.files.tour360) {
+                hostelData.tour360 = req.files.tour360.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+            }
+        }
+
+        // Parse amenities if sent as string
+        if (typeof hostelData.amenities === 'string') {
+            hostelData.amenities = hostelData.amenities.split(',').map(a => a.trim()).filter(a => a);
+        }
+
         const newHostel = new Hostel({
-            ...req.body,
+            ...hostelData,
             ownerId: req.userId // Set owner to current user
         });
         await newHostel.save();
@@ -287,8 +508,19 @@ app.post('/api/hostels', authMiddleware, roleMiddleware('owner', 'admin'), async
     }
 });
 
+// Get single hostel by ID
+app.get('/api/hostels/:id', async (req, res) => {
+    try {
+        const hostel = await Hostel.findById(req.params.id);
+        if (!hostel) return res.status(404).json({ error: 'Hostel not found' });
+        res.json(hostel);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Only owners can update their own hostels (or admins can update any)
-app.put('/api/hostels/:id', authMiddleware, async (req, res) => {
+app.put('/api/hostels/:id', authMiddleware, hostelUpload, async (req, res) => {
     try {
         const hostel = await Hostel.findById(req.params.id);
         if (!hostel) return res.status(404).json({ error: 'Hostel not found' });
@@ -298,8 +530,65 @@ app.put('/api/hostels/:id', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'Not authorized to update this hostel' });
         }
 
-        const updatedHostel = await Hostel.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json(updatedHostel);
+        const updateData = { ...req.body };
+
+        // Helper to process media fields (combine existing URLs + new files)
+        const processMedia = (fieldName) => {
+            let media = [];
+            // 1. Add existing media (passed as strings in body)
+            if (updateData[fieldName]) {
+                if (Array.isArray(updateData[fieldName])) {
+                    media = [...updateData[fieldName]];
+                } else {
+                    media = [updateData[fieldName]];
+                }
+            }
+            // 2. Add new files
+            if (req.files && req.files[fieldName]) {
+                const newUrls = req.files[fieldName].map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+                media = [...media, ...newUrls];
+            }
+            return media;
+        };
+
+        // Update media fields if present in request (either body or files)
+        // Note: If a field is completely missing from both, we assume no change.
+        // If it's present but empty in body and no files, it means clear it?
+        // To be safe: Frontend should send existing URLs.
+        if (req.files?.images || updateData.images !== undefined) {
+            hostel.images = processMedia('images');
+        }
+        if (req.files?.videos || updateData.videos !== undefined) {
+            hostel.videos = processMedia('videos');
+        }
+        if (req.files?.tour360 || updateData.tour360 !== undefined) {
+            hostel.tour360 = processMedia('tour360');
+        }
+
+        // Handle other fields
+        if (updateData.name) hostel.name = updateData.name;
+        if (updateData.location) hostel.location = updateData.location;
+        if (updateData.price) hostel.price = Number(updateData.price);
+        if (updateData.capacity) hostel.capacity = Number(updateData.capacity);
+        if (updateData.description) hostel.description = updateData.description;
+        if (updateData.category) hostel.category = updateData.category;
+        if (updateData.status) hostel.status = updateData.status;
+        if (updateData.genderPreference) hostel.genderPreference = updateData.genderPreference;
+        if (updateData.verified !== undefined) hostel.verified = updateData.verified === 'true' || updateData.verified === true;
+
+        if (updateData.amenities) {
+            if (typeof updateData.amenities === 'string') {
+                hostel.amenities = updateData.amenities.split(',').map(a => a.trim()).filter(a => a);
+            } else {
+                hostel.amenities = updateData.amenities;
+            }
+        }
+
+        // Recalculate rating to ensure consistency (self-healing)
+        hostel.calculateAverageRating();
+        await hostel.save();
+
+        res.json(hostel);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -312,7 +601,12 @@ app.delete('/api/hostels/:id', authMiddleware, async (req, res) => {
         if (!hostel) return res.status(404).json({ error: 'Hostel not found' });
 
         const user = await User.findById(req.userId);
-        if (hostel.ownerId !== req.userId && user.role !== 'admin') {
+        console.log('Delete Debug - Requesting User:', req.userId);
+        console.log('Delete Debug - Hostel Owner:', hostel.ownerId);
+        console.log('Delete Debug - User Role:', user.role);
+
+        if (hostel.ownerId.toString() !== req.userId && user.role !== 'admin') {
+            console.log('Delete Debug - Authorization Failed');
             return res.status(403).json({ error: 'Not authorized to delete this hostel' });
         }
 
@@ -340,6 +634,29 @@ app.post('/api/hostels/:id/reviews', authMiddleware, async (req, res) => {
         await hostel.save();
 
         res.json(hostel);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a review
+app.delete('/api/hostels/:id/reviews', authMiddleware, async (req, res) => {
+    try {
+        const hostel = await Hostel.findById(req.params.id);
+        if (!hostel) return res.status(404).json({ error: 'Hostel not found' });
+
+        // Find the review by the current user
+        const reviewIndex = hostel.reviews.findIndex(r => r.userId.toString() === req.userId); // Ensure comparison is correct
+        if (reviewIndex === -1) {
+            return res.status(404).json({ error: 'Review not found or you are not the author' });
+        }
+
+        // Remove the review
+        hostel.reviews.splice(reviewIndex, 1);
+        hostel.calculateAverageRating();
+        await hostel.save();
+
+        res.json({ message: 'Review deleted successfully', hostel });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -515,10 +832,184 @@ app.get('/api/hostels/nearby', async (req, res) => {
 });
 
 // ============================================
+// FAIR RENT PREDICTION ROUTES (MODULE 10)
+// ============================================
+
+const pricePredictionService = require('./services/pricePredictionService');
+
+// Predict rent for a hostel (Owner only)
+app.post('/api/hostels/predict-rent', authMiddleware, roleMiddleware(['owner', 'admin']), async (req, res) => {
+    try {
+        const prediction = await pricePredictionService.predictRent(req.body);
+        res.json(prediction);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get fairness analysis for a specific hostel (Public/Customer)
+app.get('/api/hostels/:id/fairness-analysis', async (req, res) => {
+    try {
+        const hostel = await Hostel.findById(req.params.id);
+        if (!hostel) return res.status(404).json({ error: 'Hostel not found' });
+
+        // Get prediction based on hostel's current features
+        const prediction = await pricePredictionService.predictRent({
+            location: hostel.location,
+            roomType: hostel.category,
+            amenities: hostel.amenities,
+            capacity: hostel.capacity,
+            genderPreference: hostel.genderPreference
+        });
+
+        // Compare actual price with predicted range
+        let fairnessLabel = 'Fair Price';
+        if (hostel.price < prediction.minPrice) fairnessLabel = 'Great Deal';
+        if (hostel.price > prediction.maxPrice) fairnessLabel = 'Premium';
+
+        res.json({
+            hostelPrice: hostel.price,
+            predictedRange: { min: prediction.minPrice, max: prediction.maxPrice },
+            fairnessLabel,
+            reasoning: prediction.reasoning
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get market benchmarks (Admin/Analytics)
+app.get('/api/market/benchmarks', async (req, res) => {
+    try {
+        const { location } = req.query;
+        if (!location) return res.status(400).json({ error: 'Location is required' });
+
+        const benchmarks = await pricePredictionService.getAreaBenchmarks(location);
+        res.json(benchmarks);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================
+// SEARCH ROUTES (AI-POWERED)
+// ============================================
+
+const searchService = require('./services/searchService');
+
+// Advanced search with filters
+app.get('/api/search', async (req, res) => {
+    try {
+        const filters = {
+            query: req.query.q,
+            location: req.query.location,
+            minPrice: req.query.minPrice ? parseInt(req.query.minPrice) : undefined,
+            maxPrice: req.query.maxPrice ? parseInt(req.query.maxPrice) : undefined,
+            amenities: req.query.amenities ? req.query.amenities.split(',') : undefined,
+            minRating: req.query.minRating ? parseFloat(req.query.minRating) : undefined,
+            sortBy: req.query.sortBy,
+            page: req.query.page ? parseInt(req.query.page) : 1,
+            limit: req.query.limit ? parseInt(req.query.limit) : 20
+        };
+
+        const results = await searchService.searchHostels(filters);
+        res.json(results);
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// AI-powered smart search
+app.get('/api/search/smart', async (req, res) => {
+    try {
+        const query = req.query.q;
+        if (!query) {
+            return res.status(400).json({ error: 'Query parameter required' });
+        }
+
+        // Get user profile if authenticated
+        let userProfile = {};
+        if (req.headers.authorization) {
+            try {
+                const token = req.headers.authorization.replace('Bearer ', '');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const user = await User.findById(decoded.userId);
+                if (user) {
+                    userProfile = {
+                        userId: user._id,
+                        minPrice: 0,
+                        maxPrice: 100000,
+                        preferredAmenities: [],
+                        location: req.query.location
+                    };
+                }
+            } catch (err) {
+                // Continue without user profile
+            }
+        }
+
+        const results = await searchService.smartSearch(query, userProfile, {
+            page: req.query.page ? parseInt(req.query.page) : 1,
+            limit: req.query.limit ? parseInt(req.query.limit) : 20
+        });
+
+        res.json(results);
+    } catch (error) {
+        console.error('Smart search error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get personalized recommendations
+app.get('/api/search/recommendations', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        const userProfile = {
+            userId: user._id,
+            minPrice: 0,
+            maxPrice: 100000,
+            preferredAmenities: [],
+            bookingHistory: []
+        };
+
+        const recommendations = await searchService.getRecommendations(req.userId, userProfile);
+        res.json(recommendations);
+    } catch (error) {
+        console.error('Recommendations error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get search suggestions (auto-complete)
+app.get('/api/search/suggestions', async (req, res) => {
+    try {
+        const query = req.query.q || '';
+        const suggestions = await searchService.getSuggestions(query);
+        res.json(suggestions);
+    } catch (error) {
+        console.error('Suggestions error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get available search filters
+app.get('/api/search/filters', async (req, res) => {
+    try {
+        const filters = await searchService.getSearchFilters();
+        res.json(filters);
+    } catch (error) {
+        console.error('Filters error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================
 // BOOKING ROUTES
 // ============================================
 
 const Booking = require('./models/Booking');
+const emailService = require('./services/emailService');
 const Availability = require('./models/Availability');
 const { checkAvailability, getAvailableDates, calculatePrice } = require('./services/availabilityService');
 
@@ -534,7 +1025,7 @@ app.post('/api/bookings', authMiddleware, async (req, res) => {
         }
 
         // Check availability
-        const availabilityCheck = await checkAvailability(hostelId, checkIn, checkOut);
+        const availabilityCheck = await checkAvailability(hostelId, checkIn, checkOut, numberOfGuests);
         if (!availabilityCheck.available) {
             return res.status(400).json({ error: availabilityCheck.reason });
         }
@@ -663,14 +1154,16 @@ app.post('/api/bookings/:id/confirm', authMiddleware, async (req, res) => {
 app.post('/api/bookings/:id/cancel', authMiddleware, async (req, res) => {
     try {
         const { reason } = req.body;
-        const booking = await Booking.findById(req.params.id).populate('hostelId');
+        const booking = await Booking.findById(req.params.id)
+            .populate('hostelId')
+            .populate('customerId');
 
         if (!booking) {
             return res.status(404).json({ error: 'Booking not found' });
         }
 
         // Check authorization
-        const isCustomer = booking.customerId.toString() === req.user.userId;
+        const isCustomer = booking.customerId._id.toString() === req.user.userId;
         const isOwner = booking.hostelId.ownerId.toString() === req.user.userId;
 
         if (!isCustomer && !isOwner && req.user.role !== 'admin') {
@@ -685,6 +1178,21 @@ app.post('/api/bookings/:id/cancel', authMiddleware, async (req, res) => {
         booking.cancelledAt = new Date();
         booking.cancelReason = reason;
         await booking.save();
+
+        // Send cancellation email
+        const cancelledBy = isOwner ? 'owner' : 'customer';
+        try {
+            await emailService.sendBookingCancellation(
+                booking,
+                booking.customerId,
+                booking.hostelId,
+                cancelledBy,
+                reason
+            );
+        } catch (emailError) {
+            console.error('Failed to send cancellation email:', emailError);
+            // Don't fail the request if email fails
+        }
 
         res.json(booking);
     } catch (error) {
@@ -807,10 +1315,22 @@ app.post('/api/conversations', authMiddleware, async (req, res) => {
         const { participantId, hostelId } = req.body;
 
         // Check if conversation already exists
-        let conversation = await Conversation.findOne({
+        // If hostelId is provided, look for a conversation specific to that hostel
+        // If no hostelId, look for a general direct conversation (or one without a hostelId)
+        const query = {
             participants: { $all: [req.user.userId, participantId] },
             type: 'direct'
-        }).populate('participants', 'firstName lastName email profilePicture');
+        };
+
+        if (hostelId) {
+            query.hostelId = hostelId;
+        } else {
+            // If no hostelId specified, try to find one without a hostelId or just any direct one?
+            // Better to be strict: if no hostelId, find one with no hostelId
+            query.hostelId = { $exists: false };
+        }
+
+        let conversation = await Conversation.findOne(query).populate('participants', 'firstName lastName email profilePicture');
 
         if (!conversation) {
             conversation = new Conversation({
@@ -998,7 +1518,26 @@ app.post('/api/appointments', authMiddleware, async (req, res) => {
         await appointment.save();
         await appointment.populate('hostelId customerId ownerId');
 
-        // Notify owner
+        // Send email notification to owner
+        const { sendAppointmentRequestEmail } = require('./utils/email');
+        try {
+            await sendAppointmentRequestEmail(
+                appointment.ownerId.email,
+                appointment.ownerId.firstName || appointment.ownerId.username,
+                appointment.customerId.firstName || appointment.customerId.username,
+                appointment.hostelId.name,
+                {
+                    scheduledTime: appointment.scheduledTime,
+                    duration: appointment.duration,
+                    type: appointment.type,
+                    notes: appointment.notes
+                }
+            );
+        } catch (emailError) {
+            console.error('Failed to send appointment request email:', emailError);
+        }
+
+        // Notify owner via WebSocket
         emitToUser(ownerId, 'notification:appointment', {
             type: 'new',
             appointment
@@ -1096,7 +1635,49 @@ app.patch('/api/appointments/:id', authMiddleware, async (req, res) => {
         await appointment.save();
         await appointment.populate('hostelId customerId ownerId');
 
-        // Notify other party
+        // Send email notifications
+        const { sendAppointmentConfirmationEmail, sendAppointmentCancellationEmail } = require('./utils/email');
+        try {
+            if (status === 'confirmed') {
+                // Notify customer of confirmation
+                await sendAppointmentConfirmationEmail(
+                    appointment.customerId.email,
+                    appointment.customerId.firstName || appointment.customerId.username,
+                    appointment.ownerId.firstName || appointment.ownerId.username,
+                    appointment.hostelId.name,
+                    {
+                        scheduledTime: appointment.scheduledTime,
+                        duration: appointment.duration,
+                        notes: appointment.notes
+                    }
+                );
+            } else if (status === 'cancelled') {
+                // Determine who cancelled and notify the other party
+                const isCancelledByOwner = appointment.ownerId._id.toString() === req.user.userId;
+                const recipientEmail = isCancelledByOwner ? appointment.customerId.email : appointment.ownerId.email;
+                const recipientName = isCancelledByOwner
+                    ? (appointment.customerId.firstName || appointment.customerId.username)
+                    : (appointment.ownerId.firstName || appointment.ownerId.username);
+                const cancelledBy = isCancelledByOwner
+                    ? (appointment.ownerId.firstName || appointment.ownerId.username)
+                    : (appointment.customerId.firstName || appointment.customerId.username);
+
+                await sendAppointmentCancellationEmail(
+                    recipientEmail,
+                    recipientName,
+                    appointment.hostelId.name,
+                    {
+                        scheduledTime: appointment.scheduledTime
+                    },
+                    cancelledBy,
+                    req.body.cancelReason
+                );
+            }
+        } catch (emailError) {
+            console.error('Failed to send appointment email:', emailError);
+        }
+
+        // Notify other party via WebSocket
         const notifyUserId = appointment.customerId._id.toString() === req.user.userId
             ? appointment.ownerId._id
             : appointment.customerId._id;
@@ -1767,6 +2348,37 @@ app.get('/api/fraud/flagged-hostels', authMiddleware, async (req, res) => {
     }
 });
 
+// Get user trust score
+app.get('/api/fraud/trust-score/:userId', authMiddleware, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        let trustScore = await TrustScore.findOne({ userId });
+
+        if (!trustScore) {
+            // Create default trust score if not exists
+            trustScore = new TrustScore({
+                userId,
+                score: 50, // Start with neutral score
+                factors: {
+                    accountAge: 0,
+                    verificationStatus: 0,
+                    listingQuality: 0,
+                    reviewScore: 0,
+                    activityPattern: 0,
+                    reportHistory: 0
+                },
+                badges: []
+            });
+            await trustScore.save();
+        }
+
+        res.json(trustScore);
+    } catch (error) {
+        console.error('Error fetching trust score:', error);
+        res.status(500).json({ message: 'Failed to fetch trust score' });
+    }
+});
+
 // ============================================
 // ROOMMATE MATCHING ROUTES
 // ============================================
@@ -2253,6 +2865,108 @@ app.get('/api/admin/users', authMiddleware, adminMiddleware, async (req, res) =>
     }
 });
 
+// Fraud Detection Endpoints
+const FraudCheck = require('./models/FraudCheck');
+const { performFraudCheck } = require('./utils/fraudDetectionService');
+
+// Get fraud queue
+app.get('/api/admin/fraud/queue', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { status, riskLevel } = req.query;
+        const query = {};
+
+        if (status && status !== 'all') {
+            query.status = status;
+        }
+
+        const fraudChecks = await FraudCheck.find(query)
+            .populate('hostelId')
+            .populate('ownerId', 'username email')
+            .populate('reviewedBy', 'username')
+            .sort({ riskScore: -1, createdAt: -1 })
+            .limit(100);
+
+        // Filter by risk level if specified
+        let filtered = fraudChecks;
+        if (riskLevel && riskLevel !== 'all') {
+            filtered = fraudChecks.filter(check => {
+                if (riskLevel === 'high') return check.riskScore >= 70;
+                if (riskLevel === 'medium') return check.riskScore >= 40 && check.riskScore < 70;
+                if (riskLevel === 'low') return check.riskScore < 40;
+                return true;
+            });
+        }
+
+        res.json(filtered);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Review flagged listing
+app.put('/api/admin/fraud/review/:checkId', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { decision, notes } = req.body;
+        const fraudCheck = await FraudCheck.findById(req.params.checkId);
+
+        if (!fraudCheck) {
+            return res.status(404).json({ error: 'Fraud check not found' });
+        }
+
+        fraudCheck.status = decision === 'approve' ? 'approved' : 'rejected';
+        fraudCheck.reviewedBy = req.user.userId;
+        fraudCheck.reviewedAt = new Date();
+        fraudCheck.reviewNotes = notes;
+
+        await fraudCheck.save();
+
+        // Update hostel status
+        const Hostel = require('./models/Hostel');
+        const hostel = await Hostel.findById(fraudCheck.hostelId);
+
+        if (hostel) {
+            if (decision === 'approve') {
+                hostel.status = 'Available';
+            } else {
+                hostel.status = 'Inactive';
+            }
+            await hostel.save();
+        }
+
+        res.json({ message: 'Review completed', fraudCheck });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get fraud statistics
+app.get('/api/admin/fraud/stats', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const total = await FraudCheck.countDocuments();
+        const pending = await FraudCheck.countDocuments({ status: 'pending' });
+        const highRisk = await FraudCheck.countDocuments({ riskScore: { $gte: 70 } });
+        const mediumRisk = await FraudCheck.countDocuments({
+            riskScore: { $gte: 40, $lt: 70 }
+        });
+        const lowRisk = await FraudCheck.countDocuments({ riskScore: { $lt: 40 } });
+
+        const recentChecks = await FraudCheck.find({})
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .populate('hostelId', 'name')
+            .select('riskScore status createdAt');
+
+        res.json({
+            total,
+            pending,
+            riskLevels: { high: highRisk, medium: mediumRisk, low: lowRisk },
+            recent: recentChecks
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.post('/api/admin/users/:id/action', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const { action, reason } = req.body;
@@ -2321,7 +3035,372 @@ app.patch('/api/admin/settings/:key', authMiddleware, adminMiddleware, async (re
     }
 });
 
-server.listen(PORT, () => {
+// ==================== BOOKING ROUTES ====================
+// Note: Booking model is already required at the top of the file
+
+// Create a new booking (Pakistani payment system)
+app.post('/api/bookings', authMiddleware, async (req, res) => {
+    try {
+        const { hostelId, checkIn, checkOut, guests, totalPrice } = req.body;
+
+        // Validate dates
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+
+        if (checkInDate >= checkOutDate) {
+            return res.status(400).json({ error: 'Check-out date must be after check-in date' });
+        }
+
+        if (checkInDate < new Date()) {
+            return res.status(400).json({ error: 'Check-in date cannot be in the past' });
+        }
+
+        // Check if hostel exists
+        const hostel = await Hostel.findById(hostelId);
+        if (!hostel) {
+            return res.status(404).json({ error: 'Hostel not found' });
+        }
+
+        // Get owner's bank details
+        const owner = await User.findById(hostel.ownerId);
+        if (!owner || !owner.bankDetails || !owner.bankDetails.accountNumber) {
+            return res.status(400).json({
+                error: 'Owner has not set up bank details yet. Please contact the owner.'
+            });
+        }
+
+        // Check availability
+        // Check availability with capacity
+        const conflictingBookings = await Booking.find({
+            hostelId,
+            status: { $in: ['pending', 'confirmed'] },
+            $or: [
+                { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } }
+            ]
+        });
+
+        // Calculate total guests in conflicting bookings
+        const currentGuests = conflictingBookings.reduce((sum, booking) => sum + (booking.numberOfGuests || 1), 0);
+        const requestedGuests = guests || 1;
+
+        if (currentGuests + requestedGuests > hostel.capacity) {
+            return res.status(409).json({
+                error: `Not enough space available for these dates. Capacity: ${hostel.capacity}, Booked: ${currentGuests}`,
+                availableSpots: hostel.capacity - currentGuests
+            });
+        }
+
+        // Create booking
+        const booking = new Booking({
+            hostelId,
+            customerId: req.userId,
+            checkIn: checkInDate,
+            checkOut: checkOutDate,
+            numberOfGuests: guests || 1,
+            totalPrice,
+            status: 'pending',
+            paymentStatus: 'pending'
+        });
+
+        await booking.save();
+
+        // Get customer details for email
+        const customer = await User.findById(req.userId);
+
+        // Send emails (don't wait for them to complete)
+        emailService.sendBookingConfirmation(
+            booking,
+            customer,
+            hostel,
+            owner.bankDetails,
+            { name: `${owner.firstName} ${owner.lastName}`, contactNumber: owner.contactNumber }
+        ).catch(err => console.error('Email error:', err));
+
+        emailService.sendNewBookingToOwner(
+            booking,
+            customer,
+            hostel,
+            owner
+        ).catch(err => console.error('Email error:', err));
+
+        // Return booking with owner's bank details
+        res.status(201).json({
+            booking,
+            ownerBankDetails: {
+                bankName: owner.bankDetails.bankName,
+                accountTitle: owner.bankDetails.accountTitle,
+                accountNumber: owner.bankDetails.accountNumber,
+                iban: owner.bankDetails.iban,
+                jazzCashNumber: owner.bankDetails.jazzCashNumber,
+                easyPaisaNumber: owner.bankDetails.easyPaisaNumber
+            },
+            ownerContact: {
+                name: `${owner.firstName} ${owner.lastName}`,
+                phone: owner.contactNumber
+            }
+        });
+    } catch (error) {
+        console.error('Booking creation error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get user's bookings
+app.get('/api/bookings/my-bookings', authMiddleware, async (req, res) => {
+    try {
+        const bookings = await Booking.find({ customerId: req.userId })
+            .populate('hostelId', 'name location price images')
+            .sort({ createdAt: -1 });
+
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get bookings for owner's hostels
+app.get('/api/bookings/my-hostel-bookings', authMiddleware, async (req, res) => {
+    try {
+        // Find all hostels owned by the user
+        const hostels = await Hostel.find({ ownerId: req.userId });
+        const hostelIds = hostels.map(h => h._id);
+
+        // Find all bookings for those hostels
+        const bookings = await Booking.find({ hostelId: { $in: hostelIds } })
+            .populate('hostelId', 'name location price images')
+            .populate('customerId', 'firstName lastName email contactNumber')
+            .sort({ createdAt: -1 });
+
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update booking status
+app.put('/api/bookings/:id/status', authMiddleware, async (req, res) => {
+    try {
+        const { status, cancelReason } = req.body;
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        // Check authorization
+        const hostel = await Hostel.findById(booking.hostelId);
+        const isOwner = hostel.ownerId === req.userId;
+        const isCustomer = booking.customerId.toString() === req.userId;
+
+        if (!isOwner && !isCustomer) {
+            return res.status(403).json({ error: 'Not authorized to update this booking' });
+        }
+
+        // Update status
+        booking.status = status;
+        booking.updatedAt = new Date();
+
+        if (status === 'confirmed') {
+            booking.confirmedAt = new Date();
+        } else if (status === 'cancelled') {
+            booking.cancelledAt = new Date();
+            booking.cancelReason = cancelReason;
+
+            // Process refund if payment was made
+            if (booking.paymentStatus === 'paid' && booking.paymentIntentId) {
+                const refund = await stripeService.refundPayment(
+                    booking.paymentIntentId,
+                    null,
+                    'requested_by_customer'
+                );
+                booking.paymentStatus = 'refunded';
+                booking.refundId = refund.refundId;
+                booking.refundedAt = new Date();
+            }
+        }
+
+        await booking.save();
+
+        // Send email notifications
+        try {
+            const customer = await User.findById(booking.customerId);
+            const owner = await User.findById(hostel.ownerId);
+
+            if (status === 'confirmed') {
+                await emailService.sendBookingConfirmation(
+                    booking,
+                    customer,
+                    hostel,
+                    owner.bankDetails || {},
+                    { name: `${owner.firstName} ${owner.lastName}`, contactNumber: owner.contactNumber }
+                );
+            } else if (status === 'cancelled') {
+                // Determine who cancelled
+                const cancelledBy = req.userId === hostel.ownerId ? 'owner' : 'customer';
+                await emailService.sendBookingCancellation(
+                    booking,
+                    customer,
+                    hostel,
+                    cancelledBy,
+                    cancelReason
+                );
+            }
+        } catch (emailError) {
+            console.error('Error sending status update email:', emailError);
+            // Don't fail the request if email fails
+        }
+
+        res.json(booking);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Upload payment receipt
+app.post('/api/bookings/:id/payment-receipt', authMiddleware, async (req, res) => {
+    try {
+        const { paymentMethod, transactionId, receiptImage } = req.body;
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        // Check authorization
+        if (booking.customerId.toString() !== req.userId) {
+            return res.status(403).json({ error: 'Not authorized to upload receipt for this booking' });
+        }
+
+        booking.paymentMethod = paymentMethod;
+        booking.transactionId = transactionId;
+        booking.paymentReceipt = {
+            image: receiptImage,
+            uploadedAt: new Date(),
+            verified: false
+        };
+        booking.paymentStatus = 'submitted';
+        booking.updatedAt = new Date();
+
+        await booking.save();
+
+        // Get customer and hostel details for email
+        const customer = await User.findById(booking.customerId);
+        const hostel = await Hostel.findById(booking.hostelId).populate('ownerId');
+        const owner = hostel.ownerId;
+
+        // Send email to owner
+        emailService.sendPaymentReceiptUploaded(
+            booking,
+            customer,
+            hostel,
+            owner
+        ).catch(err => console.error('Email error:', err));
+
+        res.json(booking);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Verify payment (Owner)
+app.put('/api/bookings/:id/verify-payment', authMiddleware, async (req, res) => {
+    try {
+        const { approved, rejectionReason } = req.body;
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        // Check authorization (Owner only)
+        const hostel = await Hostel.findById(booking.hostelId);
+        if (hostel.ownerId !== req.userId) {
+            return res.status(403).json({ error: 'Not authorized to verify this payment' });
+        }
+
+        if (approved) {
+            booking.paymentStatus = 'verified';
+            booking.status = 'confirmed';
+            booking.confirmedAt = new Date();
+            booking.paymentReceipt.verified = true;
+            booking.paymentReceipt.verifiedBy = req.userId;
+            booking.paymentReceipt.verifiedAt = new Date();
+        } else {
+            booking.paymentStatus = 'rejected';
+            booking.paymentReceipt.verified = false;
+            booking.paymentReceipt.verifiedBy = req.userId;
+            booking.paymentReceipt.verifiedAt = new Date();
+            booking.paymentReceipt.rejectionReason = rejectionReason;
+        }
+
+        booking.updatedAt = new Date();
+        await booking.save();
+
+        // Get customer and hostel details for email
+        const customer = await User.findById(booking.customerId);
+        const hostelData = await Hostel.findById(booking.hostelId);
+
+        // Send email to customer
+        if (approved) {
+            emailService.sendPaymentVerified(
+                booking,
+                customer,
+                hostelData
+            ).catch(err => console.error('Email error:', err));
+        } else {
+            emailService.sendPaymentRejected(
+                booking,
+                customer,
+                hostelData,
+                rejectionReason
+            ).catch(err => console.error('Email error:', err));
+        }
+
+        res.json(booking);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Check hostel availability
+app.get('/api/hostels/:id/availability', async (req, res) => {
+    try {
+        const { checkIn, checkOut } = req.query;
+
+        if (!checkIn || !checkOut) {
+            return res.status(400).json({ error: 'Check-in and check-out dates are required' });
+        }
+
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+
+        const conflictingBookings = await Booking.find({
+            hostelId: req.params.id,
+            status: { $in: ['pending', 'confirmed'] },
+            $or: [
+                { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } }
+            ]
+        });
+
+        res.json({
+            available: conflictingBookings.length === 0,
+            conflictingBookings: conflictingBookings.map(b => ({
+                checkIn: b.checkIn,
+                checkOut: b.checkOut
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== PAYMENT ROUTES ====================
+// Payment verification is now handled via /api/bookings/:id/verify-payment
+// Initialize Cron Jobs
+const { initCronJobs } = require('./services/cronService');
+initCronJobs();
+
+app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`WebSocket server ready`);
 });

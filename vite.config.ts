@@ -8,8 +8,8 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       port: 3000,
-      host: '0.0.0.0',
-      open: true, // Open browser on start
+      host: true, // Listen on all addresses (0.0.0.0)
+      open: false, // Disable auto-open in Docker
     },
     plugins: [react()],
     define: {

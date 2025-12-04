@@ -3,10 +3,12 @@ import { Hostel } from '../types';
 import Button from './Button';
 import Input from './Input';
 import { format, differenceInDays, addDays } from 'date-fns';
+import PaymentInstructions from './PaymentInstructions';
+import PaymentReceiptUpload from './PaymentReceiptUpload';
 
 interface BookingFormProps {
     hostel: Hostel;
-    onSubmit: (booking: BookingRequest) => Promise<void>;
+    onSubmit: (booking: BookingRequest) => Promise<any>; // Returns booking response with bank details
     onClose: () => void;
 }
 
@@ -27,6 +29,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
     const [error, setError] = useState<string | null>(null);
     const [totalPrice, setTotalPrice] = useState(0);
     const [duration, setDuration] = useState(0);
+
+    // Payment flow states
+    const [bookingResponse, setBookingResponse] = useState<any>(null);
+    const [showPaymentInstructions, setShowPaymentInstructions] = useState(false);
+    const [showReceiptUpload, setShowReceiptUpload] = useState(false);
 
     // Calculate price when dates change
     useEffect(() => {
@@ -80,13 +87,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
         setIsLoading(true);
 
         try {
-            await onSubmit({
+            const response = await onSubmit({
                 hostelId: hostel.id,
                 checkIn,
                 checkOut,
                 numberOfGuests,
                 specialRequests
             });
+
+            // Store booking response and show payment instructions
+            setBookingResponse(response);
+            setShowPaymentInstructions(true);
         } catch (err: any) {
             setError(err.message || 'Failed to create booking');
         } finally {
@@ -96,6 +107,33 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
 
     // Set minimum date to tomorrow
     const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+
+    // If showing payment instructions, render that instead
+    if (showPaymentInstructions && bookingResponse) {
+        if (showReceiptUpload) {
+            return (
+                <PaymentReceiptUpload
+                    bookingId={bookingResponse.booking.id}
+                    onSuccess={() => {
+                        setShowReceiptUpload(false);
+                        onClose();
+                        alert('Payment receipt uploaded successfully! The owner will verify it soon.');
+                    }}
+                    onCancel={() => setShowReceiptUpload(false)}
+                />
+            );
+        }
+
+        return (
+            <PaymentInstructions
+                amount={totalPrice}
+                bankDetails={bookingResponse.ownerBankDetails}
+                ownerContact={bookingResponse.ownerContact}
+                bookingId={bookingResponse.booking.id}
+                onUploadReceipt={() => setShowReceiptUpload(true)}
+            />
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">

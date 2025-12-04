@@ -42,7 +42,7 @@ const AdminFraudDashboard: React.FC = () => {
 
     const loadReports = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const params = new URLSearchParams();
             if (filter !== 'all') params.append('status', filter);
             if (riskFilter !== 'all') params.append('riskLevel', riskFilter);
@@ -61,7 +61,7 @@ const AdminFraudDashboard: React.FC = () => {
 
     const loadStats = async () => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch('http://localhost:5001/api/fraud/stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -75,7 +75,7 @@ const AdminFraudDashboard: React.FC = () => {
     const updateReportStatus = async (reportId: string, status: string) => {
         setIsUpdating(true);
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch(`http://localhost:5001/api/fraud/reports/${reportId}`, {
                 method: 'PATCH',
                 headers: {

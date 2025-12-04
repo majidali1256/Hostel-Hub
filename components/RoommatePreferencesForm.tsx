@@ -39,7 +39,7 @@ const RoommatePreferencesForm: React.FC<RoommatePreferencesFormProps> = ({
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             const res = await fetch('http://localhost:5001/api/roommate/preferences', {
                 method: 'POST',
                 headers: {

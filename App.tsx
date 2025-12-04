@@ -14,6 +14,7 @@ import { MenuIcon } from './components/icons/MenuIcon';
 import Settings from './components/Settings';
 import { SpinnerIcon } from './components/icons/SpinnerIcon';
 import { api } from './services/mongoService';
+import { useSocket } from './contexts/SocketContext';
 
 // New Module Imports
 import ChatDashboard from './components/ChatDashboard';
@@ -22,6 +23,12 @@ import AgreementDashboard from './components/AgreementDashboard';
 import AdminLayout from './components/admin/AdminLayout';
 import OAuthCallback from './components/OAuthCallback';
 import FairRentEstimator from './components/FairRentEstimator';
+import BookingVerificationDashboard from './components/BookingVerificationDashboard';
+import BookingHistory from './components/BookingHistory';
+import AppointmentDashboard from './components/AppointmentDashboard';
+import SmartSearch from './components/SmartSearch';
+import FraudDashboard from './components/FraudDashboard';
+import BookingForm from './components/BookingForm';
 
 const getRandomImages = (count = 3) => {
   const placeholderImages = [
@@ -35,12 +42,14 @@ const getRandomImages = (count = 3) => {
   return shuffled.slice(0, Math.min(count, placeholderImages.length));
 };
 
+
 const App: React.FC = () => {
   // Check for OAuth callback route
   if (window.location.pathname === '/oauth/callback') {
     return <OAuthCallback />;
   }
 
+  const { connect, disconnect } = useSocket();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,9 +57,11 @@ const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingHostel, setEditingHostel] = useState<Hostel | null>(null);
 
-  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator' | 'booking-history' | 'appointments'>('dashboard');
   const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
   const [selectedHostelOwner, setSelectedHostelOwner] = useState<User | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingHostel, setBookingHostel] = useState<Hostel | null>(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [sortOption, setSortOption] = useState('default');
@@ -169,7 +180,7 @@ const App: React.FC = () => {
     setIsMenuOpen(false);
   };
 
-  const handleNavigate = (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator') => {
+  const handleNavigate = (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator' | 'booking-history') => {
     setSelectedHostel(null);
     setCurrentView(view);
     setIsMenuOpen(false);
@@ -202,28 +213,46 @@ const App: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleLogin = (userData: User) => {
+    console.log('App: handleLogin called with', userData);
+    setUser(userData);
+    setIsModalOpen(false);
+  };
+
   const handleOpenEditModal = (hostel: Hostel) => {
     setEditingHostel(hostel);
     setIsModalOpen(true);
   };
 
   const handleSaveHostel = async (hostelData: Omit<Hostel, 'id'> & { id?: string }) => {
-    if (editingHostel && hostelData.id) {
-      await api.db.updateHostel(hostelData as Hostel);
-      if (selectedHostel && selectedHostel.id === hostelData.id) {
-        setSelectedHostel(prev => prev ? { ...prev, ...hostelData } as Hostel : null);
+    try {
+      if (editingHostel && hostelData.id) {
+        const updatedHostel = await api.db.updateHostel(hostelData as Hostel);
+
+        // Update hostels list
+        setHostels(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h));
+
+        if (selectedHostel && selectedHostel.id === updatedHostel.id) {
+          setSelectedHostel(updatedHostel);
+        }
+      } else if (user) {
+        const newHostel = {
+          ...hostelData,
+          ownerId: user.id,
+          ratings: [],
+          images: hostelData.images?.length > 0 ? hostelData.images : getRandomImages()
+        };
+        const savedHostel = await api.db.addHostel(newHostel);
+
+        // Update hostels list
+        setHostels(prev => [...prev, savedHostel]);
       }
-    } else if (user) {
-      const newHostel = {
-        ...hostelData,
-        ownerId: user.id,
-        ratings: [],
-        images: hostelData.images?.length > 0 ? hostelData.images : getRandomImages()
-      };
-      await api.db.addHostel(newHostel);
+      setIsModalOpen(false);
+      setEditingHostel(null);
+    } catch (error) {
+      console.error('Failed to save hostel:', error);
+      alert('Failed to save hostel. Please try again.');
     }
-    setIsModalOpen(false);
-    setEditingHostel(null);
   };
 
   const handleDeleteHostel = async (hostelId: string) => {
@@ -233,45 +262,75 @@ const App: React.FC = () => {
     }
   };
 
-  const handleRateHostel = async (hostelId: string, score: number) => {
+  const handleRateHostel = async (hostelId: string, score: number, comment?: string) => {
     if (!user) return;
 
-    const hostel = hostels.find(h => h.id === hostelId);
-    if (hostel) {
-      const existingRatings = hostel.ratings || [];
-      const userRatingIndex = existingRatings.findIndex(r => r.userId === user.id);
-      let newRatings: Array<{ userId: string; score: number; }>;
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-      if (userRatingIndex > -1) {
-        newRatings = [...existingRatings];
-        newRatings[userRatingIndex] = { userId: user.id, score };
+      const response = await fetch(`${apiUrl}/api/hostels/${hostelId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ rating: score, comment })
+      });
+
+      if (response.ok) {
+        const updatedHostel = await response.json();
+
+        // Update hostels list
+        setHostels(prev => prev.map(h => h.id === hostelId ? { ...h, ...updatedHostel, id: h.id } : h));
+
+        // Update selected hostel if viewing it
+        if (selectedHostel && selectedHostel.id === hostelId) {
+          setSelectedHostel({ ...selectedHostel, ...updatedHostel, id: selectedHostel.id });
+        }
+        alert('Review submitted successfully!');
       } else {
-        newRatings = [...existingRatings, { userId: user.id, score }];
+        const errorData = await response.json();
+        console.error('Failed to submit review:', errorData);
+        alert(`Failed to submit review: ${errorData.error || 'Unknown error'}`);
       }
-
-      const newAverage = newRatings.reduce((acc, r) => acc + r.score, 0) / newRatings.length;
-
-      await api.db.updateHostel({ id: hostelId, ratings: newRatings, rating: newAverage } as Hostel);
-
-      // Update local selection if viewing this hostel
-      if (selectedHostel && selectedHostel.id === hostelId) {
-        setSelectedHostel({ ...selectedHostel, ratings: newRatings, rating: newAverage });
-      }
+    } catch (error: any) {
+      console.error('Error submitting review:', error);
+      alert(`Error submitting review: ${error.message || 'Check your connection'}`);
     }
   };
 
   const handleClearRating = async (hostelId: string) => {
     if (!user) return;
-    const hostel = hostels.find(h => h.id === hostelId);
 
-    if (hostel) {
-      const newRatings = (hostel.ratings || []).filter(r => r.userId !== user.id);
-      const newAverage = newRatings.length > 0 ? newRatings.reduce((acc, r) => acc + r.score, 0) / newRatings.length : 0;
-      await api.db.updateHostel({ id: hostelId, ratings: newRatings, rating: newAverage } as Hostel);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-      if (selectedHostel && selectedHostel.id === hostelId) {
-        setSelectedHostel({ ...selectedHostel, ratings: newRatings, rating: newAverage });
+      const response = await fetch(`${apiUrl}/api/hostels/${hostelId}/reviews`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const updatedHostel = await response.json();
+
+        // Update hostels list
+        setHostels(prev => prev.map(h => h.id === hostelId ? { ...h, ...updatedHostel, id: h.id } : h));
+
+        // Update selected hostel if viewing it
+        if (selectedHostel && selectedHostel.id === hostelId) {
+          setSelectedHostel({ ...selectedHostel, ...updatedHostel, id: selectedHostel.id });
+        }
+      } else {
+        console.error('Failed to clear review');
+        alert('Failed to delete review. Please try again.');
       }
+    } catch (error) {
+      console.error('Error clearing review:', error);
+      alert('Error deleting review. Please check your connection.');
     }
   };
 
@@ -412,6 +471,45 @@ const App: React.FC = () => {
     </>
   );
 
+  const handleBookHostel = (hostelId: string) => {
+    const hostel = hostels.find(h => h.id === hostelId);
+    if (hostel) {
+      setBookingHostel(hostel);
+      setIsBookingModalOpen(true);
+    }
+  };
+
+  const handleBookingSubmit = async (bookingData: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+      const response = await fetch(`${apiUrl}/api/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bookingData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create booking');
+      }
+
+      const newBooking = await response.json();
+      setIsBookingModalOpen(false);
+      setBookingHostel(null);
+      alert('Booking request sent successfully! Please wait for owner approval.');
+      return newBooking;
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      alert(`Booking failed: ${error.message}`);
+      throw error;
+    }
+  };
+
   const getPageTitle = () => {
     if (selectedHostel) return selectedHostel.name;
     if (currentView === 'profile') return 'My Profile';
@@ -421,6 +519,7 @@ const App: React.FC = () => {
     if (currentView === 'agreements') return 'Agreements';
     if (currentView === 'admin') return 'Admin Dashboard';
     if (currentView === 'rent-estimator') return 'Fair Rent Estimator';
+    if (currentView === 'booking-history') return 'My Bookings';
     return 'Dashboard';
   }
 
@@ -440,6 +539,10 @@ const App: React.FC = () => {
         return <AdminLayout />;
       case 'rent-estimator':
         return <FairRentEstimator onClose={() => setCurrentView('dashboard')} />;
+      case 'booking-history':
+        return <BookingHistory />;
+      case 'appointments':
+        return <AppointmentDashboard userRole={user.role} userId={user.id} />;
       case 'dashboard':
       default:
         if (selectedHostel) {
@@ -455,6 +558,7 @@ const App: React.FC = () => {
               onClearRating={handleClearRating}
               onMarkAsStayed={handleMarkAsStayed}
               onMessageOwner={handleMessageOwner}
+              onBook={handleBookHostel}
             />
           );
         }
@@ -504,8 +608,20 @@ const App: React.FC = () => {
           initialData={editingHostel}
         />
       </Modal>
+
+      {isBookingModalOpen && bookingHostel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <BookingForm
+              hostel={bookingHostel}
+              onSubmit={handleBookingSubmit}
+              onClose={() => setIsBookingModalOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default App;
+export default App; 

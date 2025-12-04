@@ -14,13 +14,15 @@ const authMiddleware = async (req, res, next) => {
 
     try {
         const User = require('../models/User');
-        const user = await User.findById(decoded.userId);
+        // Fix: Token payload uses 'id', not 'userId'
+        const userId = decoded.id || decoded.userId;
+        const user = await User.findById(userId);
 
         if (!user) {
             return res.status(401).json({ error: 'User not found' });
         }
 
-        req.userId = decoded.userId;
+        req.userId = userId;
         req.user = { userId: user._id.toString(), role: user.role, email: user.email };
         next();
     } catch (error) {

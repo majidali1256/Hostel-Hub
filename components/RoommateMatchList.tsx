@@ -51,7 +51,7 @@ const RoommateMatchList: React.FC = () => {
 
     const sendMatchRequest = async (userId: string) => {
         try {
-            const token = localStorage.getItem('accessToken');
+            const token = localStorage.getItem('hh_access_token');
             await fetch(`http://localhost:5001/api/roommate/matches/${userId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
