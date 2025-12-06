@@ -542,7 +542,7 @@ const App: React.FC = () => {
       case 'booking-history':
         return <BookingHistory />;
       case 'appointments':
-        return <AppointmentDashboard userRole={user.role} userId={user.id} />;
+        return <AppointmentDashboard userRole={user.role as 'owner' | 'customer'} userId={user.id} />;
       case 'dashboard':
       default:
         if (selectedHostel) {
