@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
-import Button from './Button';
 
 interface SearchFiltersProps {
     onApplyFilters: (filters: FilterState) => void;
@@ -200,13 +199,13 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
 
             {/* Apply Button */}
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <Button
+                <button
                     onClick={handleApply}
-                    fullWidth
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    type="button"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200"
                 >
                     Apply Filters
-                </Button>
+                </button>
             </div>
         </div>
     );
