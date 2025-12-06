@@ -202,18 +202,45 @@ const App: React.FC = () => {
     setCurrentView('profile');
   };
 
-  const handleSearch = useCallback((query: string, filters: Record<string, any>) => {
+  const handleSearch = (query: string, filters: Record<string, any> = {}) => {
     setSortOption('default');
     setSearchQuery(query);
     setSearchFilters(filters);
-  }, []);
+  };
 
-  const handleClearSearch = useCallback(() => {
+  const handleApplyFilters = (filterState: any) => {
+    // Convert FilterState to the format expected by handleSearch
+    const filters: Record<string, any> = {};
+
+    if (filterState.priceRange) {
+      filters.minPrice = filterState.priceRange[0];
+      filters.maxPrice = filterState.priceRange[1];
+    }
+    if (filterState.amenities?.length > 0) {
+      filters.amenities = filterState.amenities.join(',');
+    }
+    if (filterState.roomCategories?.length > 0) {
+      filters.roomCategories = filterState.roomCategories.join(',');
+    }
+    if (filterState.genderPreference && filterState.genderPreference !== 'any') {
+      filters.genderPreference = filterState.genderPreference;
+    }
+    if (filterState.minRating > 0) {
+      filters.minRating = filterState.minRating;
+    }
+    if (filterState.verifiedOnly) {
+      filters.verifiedOnly = true;
+    }
+
+    handleSearch(searchQuery, filters);
+  };
+
+  const handleClearSearch = () => {
     setSearchQuery('');
     setSearchFilters(null);
     setSortOption('default');
     setSearchBarKey(Date.now());
-  }, []);
+  };
 
   const handleOpenAddModal = () => {
     setEditingHostel(null);
@@ -449,8 +476,8 @@ const App: React.FC = () => {
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2 ${showFilters
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -464,7 +491,7 @@ const App: React.FC = () => {
         {showFilters && (
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <SearchFilters
-              onApplyFilters={handleSearch}
+              onApplyFilters={handleApplyFilters}
               onClearFilters={handleClearSearch}
             />
           </div>
@@ -496,8 +523,8 @@ const App: React.FC = () => {
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
-                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
             >
               📋 List
@@ -505,8 +532,8 @@ const App: React.FC = () => {
             <button
               onClick={() => setViewMode('map')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'map'
-                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
             >
               🗺️ Map
