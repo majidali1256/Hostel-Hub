@@ -21,7 +21,7 @@ const AMENITIES_LIST = ['WiFi', 'Parking', 'Kitchen', 'Laundry', 'AC', 'Gym', 'S
 const ROOM_CATEGORIES = ['Shared Room', 'Private Room', 'Entire Place', 'Dormitory'];
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFilters }) => {
-    const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
     const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
     const [selectedRoomCategories, setSelectedRoomCategories] = useState<string[]>([]);
     const [genderPreference, setGenderPreference] = useState<string>('any');
@@ -57,7 +57,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
     };
 
     const handleClear = () => {
-        setPriceRange([0, 50000]);
+        setPriceRange([0, 1000000]);
         setSelectedAmenities([]);
         setSelectedRoomCategories([]);
         setGenderPreference('any');
@@ -68,7 +68,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
 
     const hasActiveFilters =
         priceRange[0] > 0 ||
-        priceRange[1] < 50000 ||
+        priceRange[1] < 1000000 ||
         selectedAmenities.length > 0 ||
         selectedRoomCategories.length > 0 ||
         genderPreference !== 'any' ||
@@ -98,8 +98,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
                     <Slider
                         range
                         min={0}
-                        max={50000}
-                        step={1000}
+                        max={1000000}
+                        step={10000}
                         value={priceRange}
                         onChange={(value) => setPriceRange(value as [number, number])}
                         trackStyle={[{ backgroundColor: '#3b82f6' }]}
@@ -182,8 +182,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
                             key={rating}
                             onClick={() => setMinRating(rating)}
                             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${minRating === rating
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
                             {rating === 0 ? 'Any' : `${rating}+`}
