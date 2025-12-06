@@ -78,8 +78,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="relative">
+    <form onSubmit={handleSubmit} className="flex gap-2">
+      <div className="relative flex-1">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <SearchIcon />
         </div>
@@ -125,14 +125,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
         )}
       </div>
 
-      <div className="flex justify-end">
-        <Button type="submit">
-          <div className="flex items-center gap-2">
-            <SearchIcon />
-            Search
-          </div>
-        </Button>
-      </div>
+      <Button type="submit">
+        <div className="flex items-center gap-2">
+          <SearchIcon />
+          Search
+        </div>
+      </Button>
     </form>
   );
 };
