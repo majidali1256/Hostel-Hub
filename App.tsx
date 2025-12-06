@@ -108,7 +108,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || currentView !== 'dashboard') {
       setHostels([]);
       return;
     }
@@ -118,7 +118,7 @@ const App: React.FC = () => {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, currentView]);
 
   useEffect(() => {
     const fetchOwner = async () => {

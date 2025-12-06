@@ -153,7 +153,7 @@ export const api = {
                     });
             };
             fetchHostels();
-            const interval = setInterval(fetchHostels, 5000);
+            const interval = setInterval(fetchHostels, 30000); // Poll every 30 seconds instead of 5
             return () => clearInterval(interval);
         },
         getHostel: async (id: string) => {
