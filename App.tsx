@@ -70,7 +70,7 @@ const App: React.FC = () => {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [sortOption, setSortOption] = useState('default');
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [showFilters, setShowFilters] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -533,20 +533,20 @@ const App: React.FC = () => {
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'list'
-                ? 'bg-gray-600 dark:bg-gray-600 text-white shadow-sm'
-                : 'text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white'
+                  ? 'bg-gray-600 dark:bg-gray-600 text-white shadow-sm'
+                  : 'text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white'
                 }`}
             >
               📋 List
             </button>
             <button
-              onClick={() => setViewMode('map')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'map'
-                ? 'bg-gray-600 dark:bg-gray-600 text-white shadow-sm'
-                : 'text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white'
+              onClick={() => setViewMode('grid')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'grid'
+                  ? 'bg-gray-600 dark:bg-gray-600 text-white shadow-sm'
+                  : 'text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white'
                 }`}
             >
-              🗺️ Map
+              ⊞ Grid
             </button>
           </div>
 
@@ -586,13 +586,28 @@ const App: React.FC = () => {
       {viewMode === 'list' ? (
         <HostelList hostels={sortedHostels} onSelectHostel={setSelectedHostel} />
       ) : (
-        <div className="h-[600px] rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
-          <HostelMap
-            hostels={sortedHostels}
-            onHostelClick={setSelectedHostel}
-            center={[33.6844, 73.0479]}
-            zoom={12}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {sortedHostels.map((hostel) => (
+            <div
+              key={hostel.id}
+              onClick={() => setSelectedHostel(hostel)}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-shadow border border-gray-200 dark:border-gray-700"
+            >
+              <img
+                src={hostel.images[0] || 'https://via.placeholder.com/400x300'}
+                alt={hostel.name}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{hostel.name}</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{hostel.location}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-bold text-blue-600 dark:text-blue-400">PKR {hostel.price}</span>
+                  <span className="text-yellow-500">⭐ {hostel.rating}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </>
