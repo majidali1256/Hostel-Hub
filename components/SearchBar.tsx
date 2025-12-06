@@ -170,7 +170,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
         <Button type="submit">
           <div className="flex items-center gap-2">
             <SearchIcon />
-            {aiEnabled ? '🤖 Smart Search' : 'Search'}
+            Search
           </div>
         </Button>
       </div>
