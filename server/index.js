@@ -3400,7 +3400,24 @@ app.get('/api/hostels/:id/availability', async (req, res) => {
 const { initCronJobs } = require('./services/cronService');
 initCronJobs();
 
+// ==================== SERVE FRONTEND (PRODUCTION) ====================
+const path = require('path');
+
+// In production, serve the React frontend
+if (process.env.NODE_ENV === 'production') {
+    // Serve static files from the React app build directory
+    app.use(express.static(path.join(__dirname, '../dist')));
+
+    // Handle React routing - send all non-API requests to index.html
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../dist/index.html'));
+    });
+}
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`WebSocket server ready`);
+    if (process.env.NODE_ENV === 'production') {
+        console.log('Serving React frontend from /dist');
+    }
 });
