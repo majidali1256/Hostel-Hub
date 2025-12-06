@@ -469,21 +469,31 @@ const App: React.FC = () => {
           AI-powered search to help you discover the best hostels
         </p>
 
-        {/* Search Box and Filters button */}
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <SearchBar key={searchBarKey} onSearch={handleSearch} />
-          </div>
+        {/* Search Box */}
+        <div className="mb-4">
+          <SearchBar key={searchBarKey} onSearch={handleSearch} />
+        </div>
 
-          {/* Filters Button */}
+        {/* Filters and Smart Search buttons */}
+        <div className="flex gap-3">
+          {/* Small Filters Button */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 whitespace-nowrap"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 whitespace-nowrap"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
             </svg>
             Filters
+          </button>
+
+          {/* Smart Search Button */}
+          <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 9a2 2 0 114 0 2 2 0 01-4 0z" />
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a4 4 0 00-3.446 6.032l-2.261 2.26a1 1 0 101.414 1.415l2.261-2.261A4 4 0 1011 5z" clipRule="evenodd" />
+            </svg>
+            🧠 Smart Search
           </button>
         </div>
 
