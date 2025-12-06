@@ -131,41 +131,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amenities</label>
-          <div className="flex flex-wrap gap-2">
-            {amenitiesOptions.map(amenity => (
-              <button
-                key={amenity}
-                type="button"
-                onClick={() => handleAmenityToggle(amenity)}
-                className={`px-3 py-1 text-sm rounded-full capitalize transition-colors ${selectedAmenities.includes(amenity)
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                  }`}
-              >
-                {amenity}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Price Range: PKR {priceRange[0]} - {priceRange[1] === 30000 ? '30000+' : priceRange[1]}
-          </label>
-          <input
-            id="price"
-            type="range"
-            min="5000"
-            max="30000"
-            step="1000"
-            value={priceRange[1]}
-            onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
-          />
-        </div>
-      </div>
       <div className="flex justify-end">
         <Button type="submit">
           <div className="flex items-center gap-2">
