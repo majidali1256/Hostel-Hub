@@ -30,6 +30,11 @@ import SmartSearch from './components/SmartSearch';
 import FraudDashboard from './components/FraudDashboard';
 import BookingForm from './components/BookingForm';
 
+// Module 3: AI-Based Search Components
+import SearchFilters from './components/SearchFilters';
+import HostelMap from './components/HostelMap';
+import AIRecommendations from './components/AIRecommendations';
+
 const getRandomImages = (count = 3) => {
   const placeholderImages = [
     'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
@@ -65,6 +70,8 @@ const App: React.FC = () => {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [sortOption, setSortOption] = useState('default');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [showFilters, setShowFilters] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFilters, setSearchFilters] = useState<Record<string, any> | null>(null);
@@ -425,22 +432,92 @@ const App: React.FC = () => {
 
   const renderDashboard = () => (
     <>
+      {/* Search Header */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-gray-100 dark:border-gray-700 transition-colors">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">Find your perfect stay, {user.username}!</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-lg mb-6">Use our search to discover hostels tailored to your needs.</p>
-        <SearchBar key={searchBarKey} onSearch={handleSearch} />
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">
+          🔍 Find Your Perfect Hostel
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 text-lg mb-6">
+          AI-powered search to help you discover the best hostels
+        </p>
+
+        {/* Search Bar with Filters Button */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <SearchBar key={searchBarKey} onSearch={handleSearch} />
+          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2 ${showFilters
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            Filters
+          </button>
+        </div>
+
+        {/* Collapsible Filters Panel */}
+        {showFilters && (
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <SearchFilters
+              onApplyFilters={handleSearch}
+              onClearFilters={handleClearSearch}
+            />
+          </div>
+        )}
       </div>
 
+      {/* AI Recommendations Section */}
+      <div className="mb-8">
+        <AIRecommendations onHostelClick={setSelectedHostel} />
+      </div>
+
+      {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200">Hostel Listings</h2>
-            {isSearchActive && (
-              <button onClick={handleClearSearch} className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline focus:outline-none">Clear Search</button>
-            )}
+        <div className="flex items-center gap-4 flex-wrap">
+          <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200">
+            Hostel Listings
+          </h2>
+          {isSearchActive && (
+            <button
+              onClick={handleClearSearch}
+              className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
+            >
+              Clear Search
+            </button>
+          )}
+
+          {/* View Mode Toggle */}
+          <div className="flex gap-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+            >
+              📋 List
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'map'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+            >
+              🗺️ Map
+            </button>
           </div>
+
+          {/* Sort Dropdown */}
           <div className="flex items-center gap-2">
-            <label htmlFor="sort-hostels" className="text-sm font-medium text-gray-700 dark:text-gray-300 sr-only sm:not-sr-only">Sort by:</label>
+            <label htmlFor="sort-hostels" className="text-sm font-medium text-gray-700 dark:text-gray-300 sr-only sm:not-sr-only">
+              Sort by:
+            </label>
             <select
               id="sort-hostels"
               value={sortOption}
@@ -456,6 +533,7 @@ const App: React.FC = () => {
             </select>
           </div>
         </div>
+
         {user.role === 'owner' && (
           <button
             onClick={handleOpenAddModal}
@@ -467,7 +545,19 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <HostelList hostels={sortedHostels} onSelectHostel={setSelectedHostel} />
+      {/* Results Area */}
+      {viewMode === 'list' ? (
+        <HostelList hostels={sortedHostels} onSelectHostel={setSelectedHostel} />
+      ) : (
+        <div className="h-[600px] rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+          <HostelMap
+            hostels={sortedHostels}
+            onHostelClick={setSelectedHostel}
+            center={[33.6844, 73.0479]}
+            zoom={12}
+          />
+        </div>
+      )}
     </>
   );
 
