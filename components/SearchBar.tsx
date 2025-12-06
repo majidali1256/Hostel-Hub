@@ -8,12 +8,10 @@ interface SearchBarProps {
   onSearch: (query: string, filters: Record<string, any>) => void;
 }
 
-const amenitiesOptions = ['wifi', 'laundry', 'mess', 'air-conditioning', 'security'];
+
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   const [query, setQuery] = useState('');
-  const [priceRange, setPriceRange] = useState<[number, number]>([5000, 30000]);
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -68,19 +66,15 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
     setShowSuggestions(false);
     setSuggestions([]);
     // Auto-submit search
-    onSearch(suggestion, { priceRange, amenities: selectedAmenities });
+    onSearch(suggestion, {});
   };
 
-  const handleAmenityToggle = (amenity: string) => {
-    setSelectedAmenities(prev =>
-      prev.includes(amenity) ? prev.filter(a => a !== amenity) : [...prev, amenity]
-    );
-  };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowSuggestions(false);
-    onSearch(query, { priceRange, amenities: selectedAmenities });
+    onSearch(query, {});
   };
 
   return (
