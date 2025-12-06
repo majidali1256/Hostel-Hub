@@ -36,13 +36,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
         );
     };
 
-    const toggleRoomCategory = (category: string) => {
-        setSelectedRoomCategories(prev =>
-            prev.includes(category)
-                ? prev.filter(c => c !== category)
-                : [...prev, category]
-        );
-    };
+
 
     const handleApply = () => {
         const filters: FilterState = {
