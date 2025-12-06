@@ -208,31 +208,14 @@ const App: React.FC = () => {
   };
 
   const handleApplyFilters = (filterState: any) => {
-    // Convert FilterState to the format expected by handleSearch
-    const filters: Record<string, any> = {};
+    // Pass filters in the format expected by filteredHostels
+    const filters: Record<string, any> = {
+      priceRange: filterState.priceRange || [0, 1000000],
+      amenities: filterState.amenities || []
+    };
 
-    if (filterState.priceRange) {
-      filters.minPrice = filterState.priceRange[0];
-      filters.maxPrice = filterState.priceRange[1];
-    }
-    if (filterState.amenities?.length > 0) {
-      filters.amenities = filterState.amenities.join(',');
-    }
-    if (filterState.roomCategories?.length > 0) {
-      filters.roomCategories = filterState.roomCategories.join(',');
-    }
-    if (filterState.genderPreference && filterState.genderPreference !== 'any') {
-      filters.genderPreference = filterState.genderPreference;
-    }
-    if (filterState.minRating > 0) {
-      filters.minRating = filterState.minRating;
-    }
-    if (filterState.verifiedOnly) {
-      filters.verifiedOnly = true;
-    }
-
-    // Apply filters without requiring a search query
-    handleSearch('', filters);
+    // Keep the search query if it exists
+    handleSearch(searchQuery, filters);
   };
 
   const handleClearSearch = () => {
