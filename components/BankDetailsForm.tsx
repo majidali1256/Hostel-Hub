@@ -90,33 +90,47 @@ const BankDetailsForm: React.FC = () => {
     };
 
     return (
-        <div className="bank-details-form">
-            <div className="form-header">
-                <h2>💳 Bank Account Details</h2>
-                <p>Add your bank details to receive payments from customers</p>
+        <div className="max-w-2xl mx-auto p-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <div className="mb-8 text-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                    💳 Bank Account Details
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                    Add your bank details to receive payments from customers
+                </p>
                 {bankDetails.verified && (
-                    <span className="verified-badge">✓ Verified by Admin</span>
+                    <span className="inline-block mt-2 px-3 py-1 bg-green-600 text-white rounded-full text-sm">
+                        ✓ Verified by Admin
+                    </span>
                 )}
             </div>
 
             {message && (
-                <div className={`message ${message.type}`}>
+                <div className={`p-4 rounded-lg mb-6 ${message.type === 'success'
+                        ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
+                        : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+                    }`}>
                     {message.text}
                 </div>
             )}
 
             <form onSubmit={handleSubmit}>
-                <div className="form-section">
-                    <h3>Bank Transfer Details</h3>
+                <div className="mb-8 pb-8 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                        Bank Transfer Details
+                    </h3>
 
-                    <div className="form-group">
-                        <label htmlFor="bankName">Bank Name *</label>
+                    <div className="mb-6">
+                        <label htmlFor="bankName" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            Bank Name *
+                        </label>
                         <select
                             id="bankName"
                             name="bankName"
                             value={bankDetails.bankName}
                             onChange={handleChange}
                             required
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         >
                             <option value="">Select Bank</option>
                             {PAKISTANI_BANKS.map(bank => (
@@ -125,8 +139,10 @@ const BankDetailsForm: React.FC = () => {
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="accountTitle">Account Title *</label>
+                    <div className="mb-6">
+                        <label htmlFor="accountTitle" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            Account Title *
+                        </label>
                         <input
                             type="text"
                             id="accountTitle"
@@ -135,11 +151,14 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="Account holder name"
                             required
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="accountNumber">Account Number *</label>
+                    <div className="mb-6">
+                        <label htmlFor="accountNumber" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            Account Number *
+                        </label>
                         <input
                             type="text"
                             id="accountNumber"
@@ -148,11 +167,14 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="1234567890123456"
                             required
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="iban">IBAN (Optional but recommended)</label>
+                    <div className="mb-6">
+                        <label htmlFor="iban" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            IBAN (Optional but recommended)
+                        </label>
                         <input
                             type="text"
                             id="iban"
@@ -161,16 +183,23 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="PK36SCBL0000001123456702"
                             maxLength={24}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         />
-                        <small>24 characters starting with PK</small>
+                        <small className="block mt-1 text-gray-500 dark:text-gray-400 text-sm">
+                            24 characters starting with PK
+                        </small>
                     </div>
                 </div>
 
-                <div className="form-section">
-                    <h3>Mobile Wallet (Optional)</h3>
+                <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                        Mobile Wallet (Optional)
+                    </h3>
 
-                    <div className="form-group">
-                        <label htmlFor="jazzCashNumber">JazzCash Number</label>
+                    <div className="mb-6">
+                        <label htmlFor="jazzCashNumber" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            JazzCash Number
+                        </label>
                         <input
                             type="tel"
                             id="jazzCashNumber"
@@ -179,12 +208,17 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="03001234567"
                             pattern="[0-9]{11}"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         />
-                        <small>11 digits (e.g., 03001234567)</small>
+                        <small className="block mt-1 text-gray-500 dark:text-gray-400 text-sm">
+                            11 digits (e.g., 03001234567)
+                        </small>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="easyPaisaNumber">EasyPaisa Number</label>
+                    <div className="mb-6">
+                        <label htmlFor="easyPaisaNumber" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            EasyPaisa Number
+                        </label>
                         <input
                             type="tel"
                             id="easyPaisaNumber"
@@ -193,146 +227,24 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="03001234567"
                             pattern="[0-9]{11}"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         />
-                        <small>11 digits (e.g., 03001234567)</small>
+                        <small className="block mt-1 text-gray-500 dark:text-gray-400 text-sm">
+                            11 digits (e.g., 03001234567)
+                        </small>
                     </div>
                 </div>
 
-                <div className="form-actions">
-                    <button type="submit" disabled={loading} className="btn-primary">
+                <div className="flex justify-center mt-8">
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
                         {loading ? 'Saving...' : 'Save Bank Details'}
                     </button>
                 </div>
             </form>
-
-            <style>{`
-                .bank-details-form {
-                    max-width: 600px;
-                    margin: 0 auto;
-                    padding: 2rem;
-                    background: white;
-                    border-radius: 12px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                }
-
-                .form-header {
-                    margin-bottom: 2rem;
-                    text-align: center;
-                }
-
-                .form-header h2 {
-                    margin: 0 0 0.5rem 0;
-                    color: #1a1a1a;
-                }
-
-                .form-header p {
-                    color: #666;
-                    margin: 0;
-                }
-
-                .verified-badge {
-                    display: inline-block;
-                    margin-top: 0.5rem;
-                    padding: 0.25rem 0.75rem;
-                    background: #10b981;
-                    color: white;
-                    border-radius: 20px;
-                    font-size: 0.875rem;
-                }
-
-                .message {
-                    padding: 1rem;
-                    border-radius: 8px;
-                    margin-bottom: 1.5rem;
-                }
-
-                .message.success {
-                    background: #d1fae5;
-                    color: #065f46;
-                }
-
-                .message.error {
-                    background: #fee2e2;
-                    color: #991b1b;
-                }
-
-                .form-section {
-                    margin-bottom: 2rem;
-                    padding-bottom: 2rem;
-                    border-bottom: 1px solid #e5e7eb;
-                }
-
-                .form-section:last-of-type {
-                    border-bottom: none;
-                }
-
-                .form-section h3 {
-                    margin: 0 0 1rem 0;
-                    color: #374151;
-                    font-size: 1.125rem;
-                }
-
-                .form-group {
-                    margin-bottom: 1.5rem;
-                }
-
-                .form-group label {
-                    display: block;
-                    margin-bottom: 0.5rem;
-                    color: #374151;
-                    font-weight: 500;
-                }
-
-                .form-group input,
-                .form-group select {
-                    width: 100%;
-                    padding: 0.75rem;
-                    border: 1px solid #d1d5db;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    transition: border-color 0.2s;
-                }
-
-                .form-group input:focus,
-                .form-group select:focus {
-                    outline: none;
-                    border-color: #3b82f6;
-                }
-
-                .form-group small {
-                    display: block;
-                    margin-top: 0.25rem;
-                    color: #6b7280;
-                    font-size: 0.875rem;
-                }
-
-                .form-actions {
-                    display: flex;
-                    justify-content: center;
-                    margin-top: 2rem;
-                }
-
-                .btn-primary {
-                    padding: 0.75rem 2rem;
-                    background: #3b82f6;
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-
-                .btn-primary:hover:not(:disabled) {
-                    background: #2563eb;
-                }
-
-                .btn-primary:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-            `}</style>
         </div>
     );
 };

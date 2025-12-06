@@ -83,28 +83,38 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
     };
 
     return (
-        <div className="receipt-upload-modal">
-            <div className="modal-overlay" onClick={onCancel}></div>
-            <div className="modal-content">
-                <div className="modal-header">
-                    <h2>📤 Upload Payment Receipt</h2>
-                    <button className="close-btn" onClick={onCancel}>×</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={onCancel}></div>
+            <div className="relative bg-white dark:bg-gray-800 rounded-xl p-8 max-w-lg w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        📤 Upload Payment Receipt
+                    </h2>
+                    <button
+                        onClick={onCancel}
+                        className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 w-8 h-8 flex items-center justify-center rounded transition-colors text-3xl"
+                    >
+                        ×
+                    </button>
                 </div>
 
                 {error && (
-                    <div className="error-message">
+                    <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 p-4 rounded-lg mb-4">
                         {error}
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="paymentMethod">Payment Method *</label>
+                    <div className="mb-6">
+                        <label htmlFor="paymentMethod" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            Payment Method *
+                        </label>
                         <select
                             id="paymentMethod"
                             value={paymentMethod}
                             onChange={(e) => setPaymentMethod(e.target.value)}
                             required
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                             <option value="">Select payment method</option>
                             <option value="bank_transfer">Bank Transfer</option>
@@ -114,42 +124,53 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="transactionId">Transaction ID (Optional)</label>
+                    <div className="mb-6">
+                        <label htmlFor="transactionId" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            Transaction ID (Optional)
+                        </label>
                         <input
                             type="text"
                             id="transactionId"
                             value={transactionId}
                             onChange={(e) => setTransactionId(e.target.value)}
                             placeholder="Enter transaction reference number"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
-                        <small>If available on your receipt</small>
+                        <small className="block mt-1 text-gray-500 dark:text-gray-400 text-sm">
+                            If available on your receipt
+                        </small>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="receipt">Payment Receipt/Screenshot *</label>
-                        <div className="upload-area">
+                    <div className="mb-6">
+                        <label htmlFor="receipt" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
+                            Payment Receipt/Screenshot *
+                        </label>
+                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 rounded-lg p-8 text-center transition-colors">
                             {previewUrl ? (
-                                <div className="preview-container">
-                                    <img src={previewUrl} alt="Receipt preview" />
+                                <div>
+                                    <img
+                                        src={previewUrl}
+                                        alt="Receipt preview"
+                                        className="max-w-full max-h-72 rounded-lg mb-4 mx-auto"
+                                    />
                                     <button
                                         type="button"
-                                        className="change-btn"
                                         onClick={() => {
                                             setReceiptImage('');
                                             setPreviewUrl('');
                                         }}
+                                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white rounded-md text-sm transition-colors"
                                     >
                                         Change Image
                                     </button>
                                 </div>
                             ) : (
-                                <label htmlFor="receipt" className="upload-label">
-                                    <div className="upload-icon">📷</div>
-                                    <div className="upload-text">
+                                <label htmlFor="receipt" className="cursor-pointer block">
+                                    <div className="text-5xl mb-2">📷</div>
+                                    <div className="text-gray-700 dark:text-gray-300 mb-1">
                                         <strong>Click to upload</strong> or drag and drop
                                     </div>
-                                    <div className="upload-hint">
+                                    <div className="text-gray-500 dark:text-gray-400 text-sm">
                                         PNG, JPG up to 5MB
                                     </div>
                                     <input
@@ -157,16 +178,18 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                                         id="receipt"
                                         accept="image/*"
                                         onChange={handleImageChange}
-                                        style={{ display: 'none' }}
+                                        className="hidden"
                                     />
                                 </label>
                             )}
                         </div>
                     </div>
 
-                    <div className="info-box">
-                        <strong>💡 Tips for a clear receipt:</strong>
-                        <ul>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded mb-6">
+                        <strong className="block text-blue-800 dark:text-blue-200 mb-2">
+                            💡 Tips for a clear receipt:
+                        </strong>
+                        <ul className="list-disc pl-6 text-blue-900 dark:text-blue-100 space-y-1">
                             <li>Make sure the amount is visible</li>
                             <li>Include the transaction date and time</li>
                             <li>Ensure the image is not blurry</li>
@@ -174,245 +197,24 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                         </ul>
                     </div>
 
-                    <div className="form-actions">
-                        <button type="button" onClick={onCancel} className="btn-secondary">
+                    <div className="flex gap-4 justify-end">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors"
+                        >
                             Cancel
                         </button>
-                        <button type="submit" disabled={loading} className="btn-primary">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+                        >
                             {loading ? 'Uploading...' : 'Submit Receipt'}
                         </button>
                     </div>
                 </form>
             </div>
-
-            <style>{`
-                .receipt-upload-modal {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    z-index: 1000;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                .modal-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                }
-
-                .modal-content {
-                    position: relative;
-                    background: white;
-                    border-radius: 12px;
-                    padding: 2rem;
-                    max-width: 500px;
-                    width: 90%;
-                    max-height: 90vh;
-                    overflow-y: auto;
-                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-                }
-
-                .modal-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 1.5rem;
-                }
-
-                .modal-header h2 {
-                    margin: 0;
-                    color: #1a1a1a;
-                }
-
-                .close-btn {
-                    background: none;
-                    border: none;
-                    font-size: 2rem;
-                    color: #6b7280;
-                    cursor: pointer;
-                    padding: 0;
-                    width: 32px;
-                    height: 32px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 4px;
-                    transition: background 0.2s;
-                }
-
-                .close-btn:hover {
-                    background: #f3f4f6;
-                }
-
-                .error-message {
-                    background: #fee2e2;
-                    color: #991b1b;
-                    padding: 1rem;
-                    border-radius: 8px;
-                    margin-bottom: 1rem;
-                }
-
-                .form-group {
-                    margin-bottom: 1.5rem;
-                }
-
-                .form-group label {
-                    display: block;
-                    margin-bottom: 0.5rem;
-                    color: #374151;
-                    font-weight: 500;
-                }
-
-                .form-group input,
-                .form-group select {
-                    width: 100%;
-                    padding: 0.75rem;
-                    border: 1px solid #d1d5db;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                }
-
-                .form-group input:focus,
-                .form-group select:focus {
-                    outline: none;
-                    border-color: #3b82f6;
-                }
-
-                .form-group small {
-                    display: block;
-                    margin-top: 0.25rem;
-                    color: #6b7280;
-                    font-size: 0.875rem;
-                }
-
-                .upload-area {
-                    border: 2px dashed #d1d5db;
-                    border-radius: 8px;
-                    padding: 2rem;
-                    text-align: center;
-                    transition: border-color 0.2s;
-                }
-
-                .upload-area:hover {
-                    border-color: #3b82f6;
-                }
-
-                .upload-label {
-                    cursor: pointer;
-                    display: block;
-                }
-
-                .upload-icon {
-                    font-size: 3rem;
-                    margin-bottom: 0.5rem;
-                }
-
-                .upload-text {
-                    color: #374151;
-                    margin-bottom: 0.25rem;
-                }
-
-                .upload-hint {
-                    color: #6b7280;
-                    font-size: 0.875rem;
-                }
-
-                .preview-container {
-                    position: relative;
-                }
-
-                .preview-container img {
-                    max-width: 100%;
-                    max-height: 300px;
-                    border-radius: 8px;
-                    margin-bottom: 1rem;
-                }
-
-                .change-btn {
-                    padding: 0.5rem 1rem;
-                    background: #6b7280;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 0.875rem;
-                }
-
-                .change-btn:hover {
-                    background: #4b5563;
-                }
-
-                .info-box {
-                    background: #eff6ff;
-                    border-left: 4px solid #3b82f6;
-                    padding: 1rem;
-                    border-radius: 4px;
-                    margin-bottom: 1.5rem;
-                }
-
-                .info-box strong {
-                    color: #1e40af;
-                    display: block;
-                    margin-bottom: 0.5rem;
-                }
-
-                .info-box ul {
-                    margin: 0;
-                    padding-left: 1.5rem;
-                    color: #1e3a8a;
-                }
-
-                .info-box li {
-                    margin: 0.25rem 0;
-                }
-
-                .form-actions {
-                    display: flex;
-                    gap: 1rem;
-                    justify-content: flex-end;
-                }
-
-                .btn-secondary,
-                .btn-primary {
-                    padding: 0.75rem 1.5rem;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-
-                .btn-secondary {
-                    background: #f3f4f6;
-                    color: #374151;
-                }
-
-                .btn-secondary:hover {
-                    background: #e5e7eb;
-                }
-
-                .btn-primary {
-                    background: #3b82f6;
-                    color: white;
-                }
-
-                .btn-primary:hover:not(:disabled) {
-                    background: #2563eb;
-                }
-
-                .btn-primary:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-            `}</style>
         </div>
     );
 };
