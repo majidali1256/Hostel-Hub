@@ -120,9 +120,9 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     ✨ Amenities
                 </label>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
                     {AMENITIES_LIST.map(amenity => (
-                        <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
+                        <label key={amenity} className="flex items-center space-x-2 cursor-pointer px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                             <input
                                 type="checkbox"
                                 checked={selectedAmenities.includes(amenity)}
@@ -140,19 +140,16 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     🏠 Room Type
                 </label>
-                <div className="space-y-2">
+                <select
+                    value={selectedRoomCategories[0] || ''}
+                    onChange={(e) => setSelectedRoomCategories(e.target.value ? [e.target.value] : [])}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                    <option value="">Any Room Type</option>
                     {ROOM_CATEGORIES.map(category => (
-                        <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={selectedRoomCategories.includes(category)}
-                                onChange={() => toggleRoomCategory(category)}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700 dark:text-gray-300">{category}</span>
-                        </label>
+                        <option key={category} value={category}>{category}</option>
                     ))}
-                </div>
+                </select>
             </div>
 
             {/* Gender Preference */}
