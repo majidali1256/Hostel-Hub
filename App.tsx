@@ -575,21 +575,21 @@ const App: React.FC = () => {
           )}
 
           {/* View Mode Toggle */}
-          <div className="flex gap-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+          <div className="flex gap-2 bg-gray-700 dark:bg-gray-700 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
-                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'list'
+                  ? 'bg-gray-600 dark:bg-gray-600 text-white shadow-sm'
+                  : 'text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white'
                 }`}
             >
               📋 List
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'map'
-                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'map'
+                  ? 'bg-gray-600 dark:bg-gray-600 text-white shadow-sm'
+                  : 'text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white'
                 }`}
             >
               🗺️ Map
