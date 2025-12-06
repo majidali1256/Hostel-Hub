@@ -468,26 +468,82 @@ const App: React.FC = () => {
           AI-powered search to help you discover the best hostels
         </p>
 
-        {/* Search Bar with Filters Button */}
-        <div className="flex gap-3">
-          <div className="flex-1">
+        {/* Search Box with integrated AI button */}
+        <div className="relative mb-6">
+          <div className="relative">
             <SearchBar key={searchBarKey} onSearch={handleSearch} />
+            {/* AI Button inside search box */}
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-md"
+              onClick={() => {/* AI search handler */ }}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+              </svg>
+              AI
+            </button>
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2 ${showFilters
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </div>
+
+        {/* Amenities & Price Range - Always visible */}
+        <div className="space-y-4">
+          {/* Amenities */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+              Amenities
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {['Wifi', 'Laundry', 'Mess', 'Air-Conditioning', 'Security'].map((amenity) => (
+                <button
+                  key={amenity}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-700 dark:bg-gray-600 text-gray-200 dark:text-gray-300 hover:bg-gray-600 dark:hover:bg-gray-500"
+                >
+                  {amenity}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Price Range & Filters Button Row */}
+          <div className="flex items-center gap-6">
+            {/* Price Range */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Price Range: PKR 5000 - 30000+
+                </label>
+              </div>
+              <input
+                type="range"
+                min="5000"
+                max="30000"
+                className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              />
+            </div>
+
+            {/* Filters Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              Filters
+            </button>
+          </div>
+
+          {/* Smart Search Button */}
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 9a2 2 0 114 0 2 2 0 01-4 0z" />
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a4 4 0 00-3.446 6.032l-2.261 2.26a1 1 0 101.414 1.415l2.261-2.261A4 4 0 1011 5z" clipRule="evenodd" />
             </svg>
-            Filters
+            🧠 Smart Search
           </button>
         </div>
 
-        {/* Collapsible Filters Panel */}
+        {/* Collapsible Advanced Filters Panel */}
         {showFilters && (
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <SearchFilters
