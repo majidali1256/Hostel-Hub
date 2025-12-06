@@ -18,7 +18,7 @@ const HostelList: React.FC<HostelListProps> = ({ hostels, onSelectHostel }) => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {hostels.map(hostel => (
         <HostelCard key={hostel.id} hostel={hostel} onSelectHostel={onSelectHostel} />
       ))}
