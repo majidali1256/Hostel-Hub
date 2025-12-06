@@ -3401,7 +3401,7 @@ const { initCronJobs } = require('./services/cronService');
 initCronJobs();
 
 // ==================== SERVE FRONTEND (PRODUCTION) ====================
-const path = require('path');
+// Note: path module is already required at the top of the file
 
 // In production, serve the React frontend
 if (process.env.NODE_ENV === 'production') {
@@ -3414,7 +3414,7 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`WebSocket server ready`);
     if (process.env.NODE_ENV === 'production') {
