@@ -470,10 +470,6 @@ const App: React.FC = () => {
 
         {/* Search Box with Filters Button */}
         <div className="flex gap-3 items-end mb-4">
-          <div className="flex-1">
-            <SearchBar key={searchBarKey} onSearch={handleSearch} />
-          </div>
-
           {/* Filters Button */}
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -484,6 +480,10 @@ const App: React.FC = () => {
             </svg>
             Filters
           </button>
+
+          <div className="flex-1">
+            <SearchBar key={searchBarKey} onSearch={handleSearch} />
+          </div>
         </div>
 
         {/* Collapsible Advanced Filters Panel */}
