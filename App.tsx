@@ -95,22 +95,38 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const unsubscribe = api.auth.onAuthStateChanged(async (mockUser) => {
-      if (mockUser) {
-        const userProfile = await api.db.getUser(mockUser.id);
-        if (userProfile) {
-          setUser(userProfile);
-        } else {
-          // Fallback if profile doesn't exist yet but auth does
-          console.log("User auth found, but no profile yet.");
-        }
-      } else {
-        setUser(null);
-      }
+    // Timeout fallback to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      console.log('Loading timeout - forcing isLoading to false');
       setIsLoading(false);
+    }, 3000); // 3 second timeout
+
+    const unsubscribe = api.auth.onAuthStateChanged(async (mockUser) => {
+      try {
+        if (mockUser) {
+          const userProfile = await api.db.getUser(mockUser.id);
+          if (userProfile) {
+            setUser(userProfile);
+          } else {
+            // Fallback if profile doesn't exist yet but auth does
+            console.log("User auth found, but no profile yet.");
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Auth state change error:', error);
+        setUser(null);
+      } finally {
+        clearTimeout(loadingTimeout);
+        setIsLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
