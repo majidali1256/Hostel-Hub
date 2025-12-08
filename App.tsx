@@ -264,49 +264,71 @@ const App: React.FC = () => {
     try {
       console.log('=== SAVE HOSTEL DEBUG ===');
       console.log('Original hostelData:', hostelData);
+      console.log('Is FormData?', hostelData instanceof FormData);
 
-      // Sanitize data before sending
-      const sanitizedData = {
-        ...hostelData, // Spread all original fields first
-        // Then override only the fields that need transformation
-        amenities: Array.isArray(hostelData.amenities)
-          ? hostelData.amenities
-          : typeof hostelData.amenities === 'string' && hostelData.amenities
-            ? hostelData.amenities.split(',').map(a => a.trim()).filter(a => a)
-            : [],
-        price: hostelData.price ? Number(hostelData.price) : hostelData.price,
-        capacity: hostelData.capacity ? Number(hostelData.capacity) : hostelData.capacity
-      };
+      // Check if hostelData is FormData (from PropertyListingForm)
+      if (hostelData instanceof FormData) {
+        // FormData is already properly formatted, send it directly
+        console.log('Sending FormData directly to API...');
 
-      console.log('Sanitized data:', sanitizedData);
-      console.log('Is editing?', !!editingHostel);
-      console.log('Has ID?', !!sanitizedData.id);
+        if (editingHostel && hostelData.get('id')) {
+          console.log('Calling updateHostel API with FormData...');
+          const updatedHostel = await api.db.updateHostel(hostelData as any);
+          console.log('Update successful:', updatedHostel);
 
-      if (editingHostel && sanitizedData.id) {
-        console.log('Calling updateHostel API...');
-        const updatedHostel = await api.db.updateHostel(sanitizedData as Hostel);
-        console.log('Update successful:', updatedHostel);
+          setHostels(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h));
+          if (selectedHostel && selectedHostel.id === updatedHostel.id) {
+            setSelectedHostel(updatedHostel);
+          }
+        } else if (user) {
+          console.log('Calling addHostel API with FormData...');
+          const savedHostel = await api.db.addHostel(hostelData as any);
+          console.log('Create successful:', savedHostel);
 
-        // Update hostels list
-        setHostels(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h));
-
-        if (selectedHostel && selectedHostel.id === updatedHostel.id) {
-          setSelectedHostel(updatedHostel);
+          setHostels(prev => [...prev, savedHostel]);
         }
-      } else if (user) {
-        console.log('Creating new hostel...');
-        const newHostel = {
-          ...sanitizedData,
-          ownerId: user.id,
-          ratings: [],
-          images: sanitizedData.images?.length > 0 ? sanitizedData.images : getRandomImages()
+      } else {
+        // Regular object - sanitize data before sending
+        const sanitizedData = {
+          ...hostelData, // Spread all original fields first
+          // Then override only the fields that need transformation
+          amenities: Array.isArray(hostelData.amenities)
+            ? hostelData.amenities
+            : typeof hostelData.amenities === 'string' && hostelData.amenities
+              ? hostelData.amenities.split(',').map(a => a.trim()).filter(a => a)
+              : [],
+          price: hostelData.price ? Number(hostelData.price) : hostelData.price,
+          capacity: hostelData.capacity ? Number(hostelData.capacity) : hostelData.capacity
         };
-        const savedHostel = await api.db.addHostel(newHostel);
-        console.log('Create successful:', savedHostel);
 
-        // Update hostels list
-        setHostels(prev => [...prev, savedHostel]);
+        console.log('Sanitized data:', sanitizedData);
+        console.log('Is editing?', !!editingHostel);
+        console.log('Has ID?', !!sanitizedData.id);
+
+        if (editingHostel && sanitizedData.id) {
+          console.log('Calling updateHostel API...');
+          const updatedHostel = await api.db.updateHostel(sanitizedData as Hostel);
+          console.log('Update successful:', updatedHostel);
+
+          setHostels(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h));
+          if (selectedHostel && selectedHostel.id === updatedHostel.id) {
+            setSelectedHostel(updatedHostel);
+          }
+        } else if (user) {
+          console.log('Creating new hostel...');
+          const newHostel = {
+            ...sanitizedData,
+            ownerId: user.id,
+            ratings: [],
+            images: sanitizedData.images?.length > 0 ? sanitizedData.images : getRandomImages()
+          };
+          const savedHostel = await api.db.addHostel(newHostel);
+          console.log('Create successful:', savedHostel);
+
+          setHostels(prev => [...prev, savedHostel]);
+        }
       }
+
       setIsModalOpen(false);
       setEditingHostel(null);
     } catch (error) {
