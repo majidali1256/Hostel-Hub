@@ -246,20 +246,31 @@ const App: React.FC = () => {
 
   const handleSaveHostel = async (hostelData: Omit<Hostel, 'id'> & { id?: string }) => {
     try {
+      console.log('=== SAVE HOSTEL DEBUG ===');
+      console.log('Original hostelData:', hostelData);
+
       // Sanitize data before sending
       const sanitizedData = {
         ...hostelData,
         // Convert amenities to array if it's a string
-        amenities: typeof hostelData.amenities === 'string'
-          ? hostelData.amenities.split(',').map(a => a.trim()).filter(a => a)
-          : hostelData.amenities || [],
+        amenities: Array.isArray(hostelData.amenities)
+          ? hostelData.amenities
+          : typeof hostelData.amenities === 'string' && hostelData.amenities
+            ? hostelData.amenities.split(',').map(a => a.trim()).filter(a => a)
+            : [],
         // Ensure price and capacity are numbers
         price: Number(hostelData.price),
         capacity: Number(hostelData.capacity)
       };
 
+      console.log('Sanitized data:', sanitizedData);
+      console.log('Is editing?', !!editingHostel);
+      console.log('Has ID?', !!sanitizedData.id);
+
       if (editingHostel && sanitizedData.id) {
+        console.log('Calling updateHostel API...');
         const updatedHostel = await api.db.updateHostel(sanitizedData as Hostel);
+        console.log('Update successful:', updatedHostel);
 
         // Update hostels list
         setHostels(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h));
@@ -268,6 +279,7 @@ const App: React.FC = () => {
           setSelectedHostel(updatedHostel);
         }
       } else if (user) {
+        console.log('Creating new hostel...');
         const newHostel = {
           ...sanitizedData,
           ownerId: user.id,
@@ -275,6 +287,7 @@ const App: React.FC = () => {
           images: sanitizedData.images?.length > 0 ? sanitizedData.images : getRandomImages()
         };
         const savedHostel = await api.db.addHostel(newHostel);
+        console.log('Create successful:', savedHostel);
 
         // Update hostels list
         setHostels(prev => [...prev, savedHostel]);
@@ -282,7 +295,10 @@ const App: React.FC = () => {
       setIsModalOpen(false);
       setEditingHostel(null);
     } catch (error) {
-      console.error('Failed to save hostel:', error);
+      console.error('=== SAVE HOSTEL ERROR ===');
+      console.error('Error object:', error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
       alert('Failed to save hostel. Please try again.');
     }
   };
