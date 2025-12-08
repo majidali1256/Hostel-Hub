@@ -389,8 +389,14 @@ const App: React.FC = () => {
 
       let filterMatch = true;
       if (searchFilters) {
-        const priceMatch = hostel.price >= searchFilters.priceRange[0] && (searchFilters.priceRange[1] === 30000 || hostel.price <= searchFilters.priceRange[1]);
-        const amenitiesMatch = searchFilters.amenities.every((amenity: string) => hostel.amenities.includes(amenity));
+        // Price range check with updated max value
+        const priceMatch = hostel.price >= searchFilters.priceRange[0] &&
+          (searchFilters.priceRange[1] === 1000000 || hostel.price <= searchFilters.priceRange[1]);
+
+        // Amenities check with safe array handling
+        const amenitiesMatch = !searchFilters.amenities || searchFilters.amenities.length === 0 ||
+          searchFilters.amenities.every((amenity: string) => hostel.amenities.includes(amenity));
+
         filterMatch = priceMatch && amenitiesMatch;
       }
 
