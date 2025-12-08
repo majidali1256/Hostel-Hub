@@ -445,25 +445,31 @@ const App: React.FC = () => {
     if (!searchQuery && !searchFilters) {
       return hostels;
     }
+
     return hostels.filter(hostel => {
+      // Text search with safe checks
       let textMatch = true;
       if (searchQuery) {
         const queryLower = searchQuery.toLowerCase();
-        const nameMatch = hostel.name.toLowerCase().includes(queryLower);
-        const locationMatch = hostel.location.toLowerCase().includes(queryLower);
+        const nameMatch = hostel.name?.toLowerCase().includes(queryLower) || false;
+        const locationMatch = hostel.location?.toLowerCase().includes(queryLower) || false;
         const descriptionMatch = hostel.description?.toLowerCase().includes(queryLower) || false;
         textMatch = nameMatch || locationMatch || descriptionMatch;
       }
 
+      // Filters with comprehensive safety checks
       let filterMatch = true;
       if (searchFilters) {
-        // Price range check with updated max value
-        const priceMatch = hostel.price >= searchFilters.priceRange[0] &&
-          (searchFilters.priceRange[1] === 1000000 || hostel.price <= searchFilters.priceRange[1]);
+        // Safe price check - handle null/undefined prices
+        const priceMatch = hostel.price != null &&
+          hostel.price >= (searchFilters.priceRange?.[0] || 0) &&
+          (searchFilters.priceRange?.[1] === 1000000 || hostel.price <= (searchFilters.priceRange?.[1] || 1000000));
 
-        // Amenities check with safe array handling
-        const amenitiesMatch = !searchFilters.amenities || searchFilters.amenities.length === 0 ||
-          searchFilters.amenities.every((amenity: string) => hostel.amenities.includes(amenity));
+        // Safe amenities check - ensure amenities is an array before using .includes()
+        const amenitiesMatch = !searchFilters.amenities ||
+          searchFilters.amenities.length === 0 ||
+          (Array.isArray(hostel.amenities) &&
+            searchFilters.amenities.every((amenity: string) => hostel.amenities.includes(amenity)));
 
         filterMatch = priceMatch && amenitiesMatch;
       }
