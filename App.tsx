@@ -224,10 +224,14 @@ const App: React.FC = () => {
   };
 
   const handleApplyFilters = (filterState: any) => {
-    // Pass filters in the format expected by filteredHostels
+    // Pass ALL filters in the format expected by filteredHostels
     const filters: Record<string, any> = {
       priceRange: filterState.priceRange || [0, 1000000],
-      amenities: filterState.amenities || []
+      amenities: filterState.amenities || [],
+      roomCategories: filterState.roomCategories || [],
+      genderPreference: filterState.genderPreference || 'any',
+      minRating: filterState.minRating || 0,
+      verifiedOnly: filterState.verifiedOnly || false
     };
 
     // Keep the search query if it exists
@@ -440,7 +444,6 @@ const App: React.FC = () => {
       alert('Failed to update profile.');
     }
   };
-
   const filteredHostels = useMemo(() => {
     if (!searchQuery && !searchFilters) {
       return hostels;
@@ -471,7 +474,25 @@ const App: React.FC = () => {
           (Array.isArray(hostel.amenities) &&
             searchFilters.amenities.every((amenity: string) => hostel.amenities.includes(amenity)));
 
-        filterMatch = priceMatch && amenitiesMatch;
+        // Room category check
+        const roomCategoryMatch = !searchFilters.roomCategories ||
+          searchFilters.roomCategories.length === 0 ||
+          searchFilters.roomCategories.includes(hostel.category);
+
+        // Gender preference check
+        const genderMatch = !searchFilters.genderPreference ||
+          searchFilters.genderPreference === 'any' ||
+          hostel.genderPreference === searchFilters.genderPreference;
+
+        // Minimum rating check
+        const ratingMatch = !searchFilters.minRating ||
+          searchFilters.minRating === 0 ||
+          (hostel.rating || 0) >= searchFilters.minRating;
+
+        // Verified only check
+        const verifiedMatch = !searchFilters.verifiedOnly || hostel.verified === true;
+
+        filterMatch = priceMatch && amenitiesMatch && roomCategoryMatch && genderMatch && ratingMatch && verifiedMatch;
       }
 
       return textMatch && filterMatch;
