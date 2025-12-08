@@ -479,7 +479,7 @@ app.post('/api/hostels', authMiddleware, roleMiddleware('owner', 'admin'), hoste
     try {
         const hostelData = { ...req.body };
 
-        // Handle file uploads
+        // Handle media uploads
         if (req.files) {
             if (req.files.images) {
                 hostelData.images = req.files.images.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
@@ -492,18 +492,32 @@ app.post('/api/hostels', authMiddleware, roleMiddleware('owner', 'admin'), hoste
             }
         }
 
-        // Parse amenities if sent as string
+        // Parse amenities if it's a string
         if (typeof hostelData.amenities === 'string') {
             hostelData.amenities = hostelData.amenities.split(',').map(a => a.trim()).filter(a => a);
         }
 
-        const newHostel = new Hostel({
-            ...hostelData,
-            ownerId: req.userId // Set owner to current user
-        });
-        await newHostel.save();
-        res.status(201).json(newHostel);
+        hostelData.ownerId = req.userId;
+
+        // Auto-verify hostel if owner is verified (100% trust score)
+        const owner = await User.findById(req.userId);
+        if (owner) {
+            // Calculate owner's trust score
+            owner.calculateTrustScore();
+
+            // If owner has 100% trust score (verified with documents), auto-verify their listings
+            if (owner.trustScore === 100 && owner.verificationStatus === 'verified') {
+                hostelData.verified = true;
+                console.log(`Auto-verifying hostel for verified user: ${owner.username} (Trust Score: ${owner.trustScore}%)`);
+            }
+        }
+
+        const hostel = new Hostel(hostelData);
+        await hostel.save();
+
+        res.status(201).json(hostel);
     } catch (error) {
+        console.error('Error creating hostel:', error);
         res.status(500).json({ error: error.message });
     }
 });
