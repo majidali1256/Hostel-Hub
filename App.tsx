@@ -267,7 +267,6 @@ const App: React.FC = () => {
 
       // Sanitize data before sending
       const sanitizedData = {
-        ...hostelData,
         // Convert amenities to array if it's a string
         amenities: Array.isArray(hostelData.amenities)
           ? hostelData.amenities
@@ -275,8 +274,10 @@ const App: React.FC = () => {
             ? hostelData.amenities.split(',').map(a => a.trim()).filter(a => a)
             : [],
         // Ensure price and capacity are numbers
-        price: Number(hostelData.price),
-        capacity: Number(hostelData.capacity)
+        price: hostelData.price ? Number(hostelData.price) : hostelData.price,
+        capacity: hostelData.capacity ? Number(hostelData.capacity) : hostelData.capacity,
+        // Spread all other fields from hostelData
+        ...hostelData
       };
 
       console.log('Sanitized data:', sanitizedData);
