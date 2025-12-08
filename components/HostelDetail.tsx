@@ -4,6 +4,7 @@ import Button from './Button';
 import FairnessBadge from './FairnessBadge';
 import TrustBadge from './TrustBadge';
 import AppointmentScheduler from './AppointmentScheduler';
+import ReviewsModal from './ReviewsModal';
 
 interface HostelDetailProps {
     hostel: Hostel;
@@ -91,6 +92,7 @@ const StarRating: React.FC<{ hostelId: string; userRating?: number; onRate: (id:
 
 const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack, onEdit, onDelete, onRate, onClearRating, onMarkAsStayed, onMessageOwner, onBook }) => {
     const [mainImage, setMainImage] = useState(hostel.images[0] || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&q=80');
+    const [showReviewsModal, setShowReviewsModal] = useState(false);
 
     const isOwner = user.role === 'owner' && user.id === hostel.ownerId;
     const hasStayed = user.stayHistory?.includes(hostel.id) ?? false;
@@ -207,13 +209,17 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                         </div>
                         <div className="mt-4 md:mt-0">
                             <div className="flex items-center gap-2 mb-1 justify-end">
-                                <div className="flex items-center bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-lg">
+                                <button
+                                    onClick={() => setShowReviewsModal(true)}
+                                    className="flex items-center bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors cursor-pointer"
+                                    aria-label="View all reviews"
+                                >
                                     <svg className="w-5 h-5 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                     </svg>
                                     <span className="font-bold text-gray-900 dark:text-white">{hostel.rating.toFixed(1)}</span>
                                     <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">({hostel.reviews?.length || 0} reviews)</span>
-                                </div>
+                                </button>
                             </div>
                             <div className="flex items-center gap-2">
                                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">PKR {hostel.price.toLocaleString()}<span className="text-base font-normal text-gray-500 dark:text-gray-400">/month</span></p>
@@ -358,6 +364,14 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                     onSuccess={() => {
                         alert('Appointment request sent! The owner will contact you soon.');
                     }}
+                />
+            )}
+
+            {/* Reviews Modal */}
+            {showReviewsModal && (
+                <ReviewsModal
+                    hostel={hostel}
+                    onClose={() => setShowReviewsModal(false)}
                 />
             )}
         </div>
