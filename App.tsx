@@ -246,8 +246,20 @@ const App: React.FC = () => {
 
   const handleSaveHostel = async (hostelData: Omit<Hostel, 'id'> & { id?: string }) => {
     try {
-      if (editingHostel && hostelData.id) {
-        const updatedHostel = await api.db.updateHostel(hostelData as Hostel);
+      // Sanitize data before sending
+      const sanitizedData = {
+        ...hostelData,
+        // Convert amenities to array if it's a string
+        amenities: typeof hostelData.amenities === 'string'
+          ? hostelData.amenities.split(',').map(a => a.trim()).filter(a => a)
+          : hostelData.amenities || [],
+        // Ensure price and capacity are numbers
+        price: Number(hostelData.price),
+        capacity: Number(hostelData.capacity)
+      };
+
+      if (editingHostel && sanitizedData.id) {
+        const updatedHostel = await api.db.updateHostel(sanitizedData as Hostel);
 
         // Update hostels list
         setHostels(prev => prev.map(h => h.id === updatedHostel.id ? updatedHostel : h));
@@ -257,10 +269,10 @@ const App: React.FC = () => {
         }
       } else if (user) {
         const newHostel = {
-          ...hostelData,
+          ...sanitizedData,
           ownerId: user.id,
           ratings: [],
-          images: hostelData.images?.length > 0 ? hostelData.images : getRandomImages()
+          images: sanitizedData.images?.length > 0 ? sanitizedData.images : getRandomImages()
         };
         const savedHostel = await api.db.addHostel(newHostel);
 
