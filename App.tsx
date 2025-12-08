@@ -216,6 +216,9 @@ const App: React.FC = () => {
 
     // Keep the search query if it exists
     handleSearch(searchQuery, filters);
+
+    // Close the filter panel after applying
+    setShowFilters(false);
   };
 
   const handleClearSearch = () => {
