@@ -267,17 +267,15 @@ const App: React.FC = () => {
 
       // Sanitize data before sending
       const sanitizedData = {
-        // Convert amenities to array if it's a string
+        ...hostelData, // Spread all original fields first
+        // Then override only the fields that need transformation
         amenities: Array.isArray(hostelData.amenities)
           ? hostelData.amenities
           : typeof hostelData.amenities === 'string' && hostelData.amenities
             ? hostelData.amenities.split(',').map(a => a.trim()).filter(a => a)
             : [],
-        // Ensure price and capacity are numbers
         price: hostelData.price ? Number(hostelData.price) : hostelData.price,
-        capacity: hostelData.capacity ? Number(hostelData.capacity) : hostelData.capacity,
-        // Spread all other fields from hostelData
-        ...hostelData
+        capacity: hostelData.capacity ? Number(hostelData.capacity) : hostelData.capacity
       };
 
       console.log('Sanitized data:', sanitizedData);
