@@ -8,6 +8,9 @@ export interface User {
   contactNumber?: string;
   stayHistory?: string[];
   profilePicture?: string;
+  trustScore?: number; // 0-100, calculated based on profile completion and verification
+  isVerified?: boolean; // True if admin has verified documents
+  verificationDocuments?: string[]; // URLs to uploaded verification documents
 }
 
 export type HostelCategory = 'boys' | 'girls' | 'any';

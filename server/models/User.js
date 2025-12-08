@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema({
     contactNumber: String,
     stayHistory: [String],
     profilePicture: String,
+    trustScore: { type: Number, default: 0, min: 0, max: 100 }, // Calculated trust score 0-100
+    verificationDocuments: [String], // URLs to uploaded verification documents
     emailVerified: { type: Boolean, default: false },
     verificationToken: String,
     resetPasswordToken: String,
@@ -54,6 +56,30 @@ userSchema.pre('save', async function (next) {
 // Method to compare passwords
 userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to calculate trust score
+userSchema.methods.calculateTrustScore = function () {
+    let score = 0;
+
+    // Basic Profile (50 points)
+    const basicFields = ['username', 'email', 'contactNumber', 'firstName', 'lastName'];
+    const filledFields = basicFields.filter(field => this[field]).length;
+    const basicScore = (filledFields / basicFields.length) * 40; // 40 points for basic fields
+
+    if (this.profilePicture) {
+        score += 10; // 10 points for profile picture
+    }
+
+    score += basicScore;
+
+    // Verification (50 points)
+    if (this.verificationStatus === 'verified' && this.verificationDocuments && this.verificationDocuments.length > 0) {
+        score += 50; // 50 points for verified with documents
+    }
+
+    this.trustScore = Math.min(Math.round(score), 100);
+    return this.trustScore;
 };
 
 // Map _id to id for frontend compatibility
