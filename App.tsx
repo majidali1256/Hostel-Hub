@@ -460,36 +460,41 @@ const App: React.FC = () => {
         textMatch = nameMatch || locationMatch || descriptionMatch;
       }
 
-      // Filters with comprehensive safety checks
+      // Filters - only apply if actually set
       let filterMatch = true;
       if (searchFilters) {
-        // Safe price check - handle null/undefined prices
-        const priceMatch = hostel.price != null &&
-          hostel.price >= (searchFilters.priceRange?.[0] || 0) &&
-          (searchFilters.priceRange?.[1] === 1000000 || hostel.price <= (searchFilters.priceRange?.[1] || 1000000));
+        const minPrice = searchFilters.priceRange?.[0] || 0;
+        const maxPrice = searchFilters.priceRange?.[1] || 1000000;
 
-        // Safe amenities check - ensure amenities is an array before using .includes()
+        // Only apply price filter if it's been changed from defaults
+        const isPriceFilterActive = minPrice > 0 || maxPrice < 1000000;
+        const priceMatch = !isPriceFilterActive ||
+          (hostel.price != null && hostel.price >= minPrice && hostel.price <= maxPrice);
+
+        // Amenities - only if selected
         const amenitiesMatch = !searchFilters.amenities ||
           searchFilters.amenities.length === 0 ||
           (Array.isArray(hostel.amenities) &&
             searchFilters.amenities.every((amenity: string) => hostel.amenities.includes(amenity)));
 
-        // Room category check
+        // Room category - only if selected
         const roomCategoryMatch = !searchFilters.roomCategories ||
           searchFilters.roomCategories.length === 0 ||
-          searchFilters.roomCategories.includes(hostel.category);
+          (hostel.category && searchFilters.roomCategories.includes(hostel.category));
 
-        // Gender preference check
+        // Gender - only if not 'any'
         const genderMatch = !searchFilters.genderPreference ||
           searchFilters.genderPreference === 'any' ||
-          hostel.genderPreference === searchFilters.genderPreference;
+          !hostel.genderPreference ||
+          hostel.genderPreference === searchFilters.genderPreference ||
+          hostel.genderPreference === 'any';
 
-        // Minimum rating check
+        // Rating - only if > 0
         const ratingMatch = !searchFilters.minRating ||
           searchFilters.minRating === 0 ||
           (hostel.rating || 0) >= searchFilters.minRating;
 
-        // Verified only check
+        // Verified - only if checked
         const verifiedMatch = !searchFilters.verifiedOnly || hostel.verified === true;
 
         filterMatch = priceMatch && amenitiesMatch && roomCategoryMatch && genderMatch && ratingMatch && verifiedMatch;
