@@ -234,6 +234,22 @@ const App: React.FC = () => {
       verifiedOnly: filterState.verifiedOnly || false
     };
 
+    console.log('=== FILTER DEBUG ===');
+    console.log('Applied filters:', filters);
+    console.log('Total hostels:', hostels.length);
+
+    // Debug each hostel
+    hostels.forEach((hostel, i) => {
+      console.log(`Hostel ${i}: ${hostel.name}`, {
+        price: hostel.price,
+        category: hostel.category,
+        genderPreference: hostel.genderPreference,
+        amenities: hostel.amenities,
+        rating: hostel.rating,
+        verified: hostel.verified
+      });
+    });
+
     // Keep the search query if it exists
     handleSearch(searchQuery, filters);
 
@@ -471,11 +487,15 @@ const App: React.FC = () => {
         const priceMatch = !isPriceFilterActive ||
           (hostel.price != null && hostel.price >= minPrice && hostel.price <= maxPrice);
 
-        // Amenities - only if selected
+        // Amenities - case-insensitive matching
         const amenitiesMatch = !searchFilters.amenities ||
           searchFilters.amenities.length === 0 ||
           (Array.isArray(hostel.amenities) &&
-            searchFilters.amenities.every((amenity: string) => hostel.amenities.includes(amenity)));
+            searchFilters.amenities.every((filterAmenity: string) =>
+              hostel.amenities.some((hostelAmenity: string) =>
+                hostelAmenity.toLowerCase() === filterAmenity.toLowerCase()
+              )
+            ));
 
         // Room category - only if selected
         const roomCategoryMatch = !searchFilters.roomCategories ||
