@@ -143,7 +143,7 @@ router.get('/admin/all', authMiddleware, async (req, res) => {
         }
 
         const users = await User.find(query)
-            .select('username email firstName lastName verificationStatus idDocument verificationDate rejectionReason createdAt')
+            .select('username email firstName lastName verificationStatus idDocument verificationDocuments verificationDate rejectionReason createdAt profilePicture')
             .sort({ createdAt: -1 });
 
         res.json({
@@ -156,6 +156,8 @@ router.get('/admin/all', authMiddleware, async (req, res) => {
                 lastName: user.lastName,
                 status: user.verificationStatus,
                 document: user.idDocument,
+                documents: user.verificationDocuments || [],
+                profilePicture: user.profilePicture,
                 submittedAt: user.createdAt,
                 verificationDate: user.verificationDate,
                 rejectionReason: user.rejectionReason
