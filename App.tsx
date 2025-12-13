@@ -728,6 +728,12 @@ const App: React.FC = () => {
       case 'agreements':
         return <AgreementDashboard user={user} />;
       case 'admin':
+        // Only allow admin users to access admin panel
+        if (user?.role !== 'admin') {
+          alert('Access denied. Admin privileges required.');
+          setCurrentView('dashboard');
+          return null;
+        }
         return <AdminLayout />;
       case 'rent-estimator':
         return <FairRentEstimator onClose={() => setCurrentView('dashboard')} />;

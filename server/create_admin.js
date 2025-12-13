@@ -2,13 +2,13 @@ const mongoose = require('mongoose');
 const User = require('./models/User');
 require('dotenv').config();
 
-const MONGODB_URI = 'mongodb://127.0.0.1:27017/hostel-hub';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hostel-hub';
 
 mongoose.connect(MONGODB_URI)
     .then(async () => {
         console.log('Connected to MongoDB');
 
-        const adminEmail = 'admin@hostelhub.com';
+        const adminEmail = 'admin@gmail.com';
         const existingAdmin = await User.findOne({ email: adminEmail });
 
         if (existingAdmin) {
@@ -20,7 +20,7 @@ mongoose.connect(MONGODB_URI)
             const newAdmin = new User({
                 username: 'admin',
                 email: adminEmail,
-                password: 'adminpassword123', // Will be hashed
+                password: 'admin123', // Will be hashed
                 role: 'admin',
                 firstName: 'System',
                 lastName: 'Admin',
