@@ -12,7 +12,7 @@ const UserManagement: React.FC = () => {
 
     const loadUsers = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (filter !== 'all') params.append('status', filter);
@@ -33,7 +33,7 @@ const UserManagement: React.FC = () => {
         if (!confirm(`Are you sure you want to ${action} this user?`)) return;
 
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             await fetch(`http://localhost:5001/api/admin/users/${userId}/action`, {
                 method: 'POST',
                 headers: {

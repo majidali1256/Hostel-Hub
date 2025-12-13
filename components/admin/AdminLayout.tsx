@@ -6,6 +6,7 @@ import VerificationReview from './VerificationReview';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import BulkActionsPanel from './BulkActionsPanel';
 import ReportsGenerator from './ReportsGenerator';
+import AdminSettings from './AdminSettings';
 
 const AdminLayout: React.FC = () => {
     const [activePage, setActivePage] = useState('dashboard');
@@ -27,7 +28,7 @@ const AdminLayout: React.FC = () => {
             case 'reports':
                 return <ReportsGenerator />;
             case 'settings':
-                return <div className="p-8 text-center text-gray-500">System Settings (Coming Soon)</div>;
+                return <AdminSettings />;
             default:
                 return <AdminDashboard onNavigate={setActivePage} />;
         }
@@ -58,8 +59,8 @@ const AdminLayout: React.FC = () => {
                             key={item.id}
                             onClick={() => setActivePage(item.id)}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activePage === item.id
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                 }`}
                         >
                             <span className="text-lg">{item.icon}</span>

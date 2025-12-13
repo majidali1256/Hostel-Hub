@@ -50,7 +50,7 @@ const FraudDashboard: React.FC = () => {
     const loadFraudQueue = async () => {
         try {
             setIsLoading(true);
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(
                 `http://localhost:5001/api/admin/fraud/queue?status=${statusFilter}&riskLevel=${riskFilter}`,
                 { headers: { 'Authorization': `Bearer ${token}` } }
@@ -68,7 +68,7 @@ const FraudDashboard: React.FC = () => {
 
     const loadStats = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:5001/api/admin/fraud/stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -83,7 +83,7 @@ const FraudDashboard: React.FC = () => {
 
     const handleReview = async (checkId: string, decision: 'approve' | 'reject') => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:5001/api/admin/fraud/review/${checkId}`, {
                 method: 'PUT',
                 headers: {

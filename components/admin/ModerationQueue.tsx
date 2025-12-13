@@ -11,7 +11,7 @@ const ModerationQueue: React.FC = () => {
 
     const loadReports = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:5001/api/admin/reports?status=pending', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -26,7 +26,7 @@ const ModerationQueue: React.FC = () => {
 
     const handleResolve = async (reportId: string, resolution: string, note: string) => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             await fetch(`http://localhost:5001/api/admin/reports/${reportId}/resolve`, {
                 method: 'POST',
                 headers: {

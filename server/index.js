@@ -3049,6 +3049,27 @@ app.patch('/api/admin/settings/:key', authMiddleware, adminMiddleware, async (re
     }
 });
 
+// Bulk update settings
+app.put('/api/admin/settings', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const settings = req.body;
+        // Update each setting
+        const results = [];
+        for (const [key, value] of Object.entries(settings)) {
+            const setting = await AdminService.updateSetting(
+                req.user.userId,
+                key,
+                value,
+                req.ip
+            );
+            results.push(setting);
+        }
+        res.json({ success: true, updated: results.length });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==================== ADMIN ANALYTICS ENDPOINTS ====================
 
 // Detailed Analytics Overview
