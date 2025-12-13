@@ -3049,6 +3049,514 @@ app.patch('/api/admin/settings/:key', authMiddleware, adminMiddleware, async (re
     }
 });
 
+// ==================== ADMIN ANALYTICS ENDPOINTS ====================
+
+// Detailed Analytics Overview
+app.get('/api/admin/analytics/overview', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const end = endDate ? new Date(endDate) : new Date();
+
+        // Get counts
+        const totalUsers = await User.countDocuments();
+        const totalHostels = await Hostel.countDocuments();
+        const totalBookings = await Booking.countDocuments();
+        const verifiedUsers = await User.countDocuments({ verificationStatus: 'verified' });
+        const pendingVerifications = await User.countDocuments({ verificationStatus: 'pending' });
+
+        // New users this period
+        const newUsers = await User.countDocuments({ createdAt: { $gte: start, $lte: end } });
+        const newHostels = await Hostel.countDocuments({ createdAt: { $gte: start, $lte: end } });
+        const newBookings = await Booking.countDocuments({ createdAt: { $gte: start, $lte: end } });
+
+        // Revenue calculation
+        const confirmedBookings = await Booking.find({
+            status: 'confirmed',
+            createdAt: { $gte: start, $lte: end }
+        });
+        const totalRevenue = confirmedBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+
+        // User breakdown by role
+        const owners = await User.countDocuments({ role: 'owner' });
+        const customers = await User.countDocuments({ role: 'customer' });
+        const admins = await User.countDocuments({ role: 'admin' });
+
+        // Hostel breakdown
+        const verifiedHostels = await Hostel.countDocuments({ verified: true });
+        const availableHostels = await Hostel.countDocuments({ status: 'Available' });
+
+        // Booking breakdown
+        const pendingBookings = await Booking.countDocuments({ status: 'pending' });
+        const confirmedBookingsCount = await Booking.countDocuments({ status: 'confirmed' });
+        const cancelledBookings = await Booking.countDocuments({ status: 'cancelled' });
+
+        res.json({
+            period: { start, end },
+            overview: {
+                totalUsers,
+                totalHostels,
+                totalBookings,
+                totalRevenue,
+                verifiedUsers,
+                pendingVerifications
+            },
+            newThisPeriod: {
+                users: newUsers,
+                hostels: newHostels,
+                bookings: newBookings,
+                revenue: totalRevenue
+            },
+            userBreakdown: { owners, customers, admins },
+            hostelBreakdown: {
+                total: totalHostels,
+                verified: verifiedHostels,
+                available: availableHostels
+            },
+            bookingBreakdown: {
+                pending: pendingBookings,
+                confirmed: confirmedBookingsCount,
+                cancelled: cancelledBookings
+            }
+        });
+    } catch (error) {
+        console.error('Analytics overview error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// User Analytics with Trends
+app.get('/api/admin/analytics/users', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { days = 30 } = req.query;
+        const startDate = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000);
+
+        // Get daily user registrations
+        const userTrends = await User.aggregate([
+            { $match: { createdAt: { $gte: startDate } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Role distribution
+        const roleDistribution = await User.aggregate([
+            { $group: { _id: "$role", count: { $sum: 1 } } }
+        ]);
+
+        // Verification status
+        const verificationStatus = await User.aggregate([
+            { $group: { _id: "$verificationStatus", count: { $sum: 1 } } }
+        ]);
+
+        // Top active users (by bookings)
+        const topUsers = await Booking.aggregate([
+            { $group: { _id: "$customerId", bookingCount: { $sum: 1 } } },
+            { $sort: { bookingCount: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+            { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } }
+        ]);
+
+        res.json({
+            trends: userTrends,
+            roleDistribution,
+            verificationStatus,
+            topUsers: topUsers.map(u => ({
+                userId: u._id,
+                username: u.user?.username || 'Unknown',
+                email: u.user?.email || '',
+                bookingCount: u.bookingCount
+            }))
+        });
+    } catch (error) {
+        console.error('User analytics error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Booking Analytics
+app.get('/api/admin/analytics/bookings', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { days = 30 } = req.query;
+        const startDate = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000);
+
+        // Daily booking trends
+        const bookingTrends = await Booking.aggregate([
+            { $match: { createdAt: { $gte: startDate } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    count: { $sum: 1 },
+                    revenue: { $sum: "$totalPrice" }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Status distribution
+        const statusDistribution = await Booking.aggregate([
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+        ]);
+
+        // Top booked hostels
+        const topHostels = await Booking.aggregate([
+            { $group: { _id: "$hostelId", bookingCount: { $sum: 1 }, revenue: { $sum: "$totalPrice" } } },
+            { $sort: { bookingCount: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: 'hostels', localField: '_id', foreignField: '_id', as: 'hostel' } },
+            { $unwind: { path: '$hostel', preserveNullAndEmptyArrays: true } }
+        ]);
+
+        // Average booking value
+        const avgBookingValue = await Booking.aggregate([
+            { $match: { status: 'confirmed' } },
+            { $group: { _id: null, avg: { $avg: "$totalPrice" } } }
+        ]);
+
+        res.json({
+            trends: bookingTrends,
+            statusDistribution,
+            topHostels: topHostels.map(h => ({
+                hostelId: h._id,
+                name: h.hostel?.name || 'Unknown',
+                location: h.hostel?.location || '',
+                bookingCount: h.bookingCount,
+                revenue: h.revenue
+            })),
+            averageBookingValue: avgBookingValue[0]?.avg || 0
+        });
+    } catch (error) {
+        console.error('Booking analytics error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Revenue Analytics
+app.get('/api/admin/analytics/revenue', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { days = 30 } = req.query;
+        const startDate = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000);
+
+        // Daily revenue
+        const revenueTrends = await Booking.aggregate([
+            { $match: { status: 'confirmed', createdAt: { $gte: startDate } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    revenue: { $sum: "$totalPrice" },
+                    bookings: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Monthly revenue (last 12 months)
+        const monthlyRevenue = await Booking.aggregate([
+            { $match: { status: 'confirmed' } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+                    revenue: { $sum: "$totalPrice" },
+                    bookings: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: -1 } },
+            { $limit: 12 }
+        ]);
+
+        // Total revenue
+        const totalRevenue = await Booking.aggregate([
+            { $match: { status: 'confirmed' } },
+            { $group: { _id: null, total: { $sum: "$totalPrice" } } }
+        ]);
+
+        // Revenue by hostel category
+        const revenueByCategory = await Booking.aggregate([
+            { $match: { status: 'confirmed' } },
+            { $lookup: { from: 'hostels', localField: 'hostelId', foreignField: '_id', as: 'hostel' } },
+            { $unwind: { path: '$hostel', preserveNullAndEmptyArrays: true } },
+            { $group: { _id: "$hostel.category", revenue: { $sum: "$totalPrice" } } }
+        ]);
+
+        res.json({
+            dailyTrends: revenueTrends,
+            monthlyTrends: monthlyRevenue.reverse(),
+            totalRevenue: totalRevenue[0]?.total || 0,
+            byCategory: revenueByCategory
+        });
+    } catch (error) {
+        console.error('Revenue analytics error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== BULK ACTIONS ====================
+
+// Bulk User Actions
+app.post('/api/admin/bulk/users', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { userIds, action } = req.body;
+
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ error: 'No users selected' });
+        }
+
+        let result;
+        switch (action) {
+            case 'verify':
+                result = await User.updateMany(
+                    { _id: { $in: userIds } },
+                    { $set: { verificationStatus: 'verified' } }
+                );
+                break;
+            case 'suspend':
+                result = await User.updateMany(
+                    { _id: { $in: userIds } },
+                    { $set: { status: 'suspended' } }
+                );
+                break;
+            case 'activate':
+                result = await User.updateMany(
+                    { _id: { $in: userIds } },
+                    { $set: { status: 'active' } }
+                );
+                break;
+            case 'delete':
+                result = await User.deleteMany({ _id: { $in: userIds } });
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid action' });
+        }
+
+        res.json({
+            success: true,
+            action,
+            affectedCount: result.modifiedCount || result.deletedCount || 0
+        });
+    } catch (error) {
+        console.error('Bulk user action error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Bulk Hostel Actions
+app.post('/api/admin/bulk/hostels', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { hostelIds, action } = req.body;
+
+        if (!hostelIds || !Array.isArray(hostelIds) || hostelIds.length === 0) {
+            return res.status(400).json({ error: 'No hostels selected' });
+        }
+
+        let result;
+        switch (action) {
+            case 'verify':
+                result = await Hostel.updateMany(
+                    { _id: { $in: hostelIds } },
+                    { $set: { verified: true } }
+                );
+                break;
+            case 'unverify':
+                result = await Hostel.updateMany(
+                    { _id: { $in: hostelIds } },
+                    { $set: { verified: false } }
+                );
+                break;
+            case 'activate':
+                result = await Hostel.updateMany(
+                    { _id: { $in: hostelIds } },
+                    { $set: { status: 'Available' } }
+                );
+                break;
+            case 'deactivate':
+                result = await Hostel.updateMany(
+                    { _id: { $in: hostelIds } },
+                    { $set: { status: 'Inactive' } }
+                );
+                break;
+            case 'delete':
+                result = await Hostel.deleteMany({ _id: { $in: hostelIds } });
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid action' });
+        }
+
+        res.json({
+            success: true,
+            action,
+            affectedCount: result.modifiedCount || result.deletedCount || 0
+        });
+    } catch (error) {
+        console.error('Bulk hostel action error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== REPORT GENERATION ====================
+
+// Generate Admin Report
+app.get('/api/admin/reports/generate/:type', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { type } = req.params;
+        const { startDate, endDate } = req.query;
+        const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const end = endDate ? new Date(endDate) : new Date();
+
+        let reportData = {};
+
+        switch (type) {
+            case 'users':
+                const users = await User.find({ createdAt: { $gte: start, $lte: end } })
+                    .select('username email role verificationStatus createdAt')
+                    .sort({ createdAt: -1 });
+                reportData = {
+                    type: 'User Report',
+                    period: { start, end },
+                    totalCount: users.length,
+                    data: users
+                };
+                break;
+
+            case 'bookings':
+                const bookings = await Booking.find({ createdAt: { $gte: start, $lte: end } })
+                    .populate('hostelId', 'name location')
+                    .populate('customerId', 'username email')
+                    .select('status totalPrice checkIn checkOut createdAt')
+                    .sort({ createdAt: -1 });
+                reportData = {
+                    type: 'Booking Report',
+                    period: { start, end },
+                    totalCount: bookings.length,
+                    totalRevenue: bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0),
+                    data: bookings
+                };
+                break;
+
+            case 'hostels':
+                const hostels = await Hostel.find({ createdAt: { $gte: start, $lte: end } })
+                    .populate('ownerId', 'username email')
+                    .select('name location category price verified status rating createdAt')
+                    .sort({ createdAt: -1 });
+                reportData = {
+                    type: 'Hostel Report',
+                    period: { start, end },
+                    totalCount: hostels.length,
+                    data: hostels
+                };
+                break;
+
+            case 'revenue':
+                const revenueBookings = await Booking.find({
+                    status: 'confirmed',
+                    createdAt: { $gte: start, $lte: end }
+                }).populate('hostelId', 'name');
+                const totalRev = revenueBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+                reportData = {
+                    type: 'Revenue Report',
+                    period: { start, end },
+                    totalRevenue: totalRev,
+                    bookingCount: revenueBookings.length,
+                    averageValue: revenueBookings.length > 0 ? totalRev / revenueBookings.length : 0,
+                    data: revenueBookings
+                };
+                break;
+
+            case 'summary':
+                reportData = {
+                    type: 'Summary Report',
+                    period: { start, end },
+                    users: {
+                        total: await User.countDocuments(),
+                        new: await User.countDocuments({ createdAt: { $gte: start, $lte: end } }),
+                        verified: await User.countDocuments({ verificationStatus: 'verified' })
+                    },
+                    hostels: {
+                        total: await Hostel.countDocuments(),
+                        new: await Hostel.countDocuments({ createdAt: { $gte: start, $lte: end } }),
+                        verified: await Hostel.countDocuments({ verified: true })
+                    },
+                    bookings: {
+                        total: await Booking.countDocuments({ createdAt: { $gte: start, $lte: end } }),
+                        confirmed: await Booking.countDocuments({ status: 'confirmed', createdAt: { $gte: start, $lte: end } }),
+                        pending: await Booking.countDocuments({ status: 'pending' })
+                    }
+                };
+                break;
+
+            default:
+                return res.status(400).json({ error: 'Invalid report type' });
+        }
+
+        reportData.generatedAt = new Date();
+        reportData.generatedBy = req.user.userId;
+
+        res.json(reportData);
+    } catch (error) {
+        console.error('Report generation error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Export Report as CSV
+app.get('/api/admin/reports/export/:type', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { type } = req.params;
+        const { startDate, endDate } = req.query;
+        const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const end = endDate ? new Date(endDate) : new Date();
+
+        let csvContent = '';
+        let filename = '';
+
+        switch (type) {
+            case 'users':
+                const users = await User.find({ createdAt: { $gte: start, $lte: end } })
+                    .select('username email role verificationStatus createdAt');
+                csvContent = 'Username,Email,Role,Verification Status,Created At\n';
+                users.forEach(u => {
+                    csvContent += `"${u.username}","${u.email}","${u.role}","${u.verificationStatus}","${u.createdAt}"\n`;
+                });
+                filename = `users_report_${start.toISOString().split('T')[0]}.csv`;
+                break;
+
+            case 'bookings':
+                const bookings = await Booking.find({ createdAt: { $gte: start, $lte: end } })
+                    .populate('hostelId', 'name')
+                    .populate('customerId', 'username');
+                csvContent = 'Hostel,Customer,Status,Total Price,Check In,Check Out,Created At\n';
+                bookings.forEach(b => {
+                    csvContent += `"${b.hostelId?.name || ''}","${b.customerId?.username || ''}","${b.status}","${b.totalPrice}","${b.checkIn}","${b.checkOut}","${b.createdAt}"\n`;
+                });
+                filename = `bookings_report_${start.toISOString().split('T')[0]}.csv`;
+                break;
+
+            case 'hostels':
+                const hostels = await Hostel.find({ createdAt: { $gte: start, $lte: end } });
+                csvContent = 'Name,Location,Category,Price,Verified,Status,Rating,Created At\n';
+                hostels.forEach(h => {
+                    csvContent += `"${h.name}","${h.location}","${h.category}","${h.price}","${h.verified}","${h.status}","${h.rating}","${h.createdAt}"\n`;
+                });
+                filename = `hostels_report_${start.toISOString().split('T')[0]}.csv`;
+                break;
+
+            default:
+                return res.status(400).json({ error: 'Invalid export type' });
+        }
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(csvContent);
+    } catch (error) {
+        console.error('Report export error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==================== BOOKING ROUTES ====================
 // Note: Booking model is already required at the top of the file
 
