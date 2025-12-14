@@ -121,6 +121,9 @@ const BookingVerificationDashboard: React.FC = () => {
         }
     };
 
+    // Bookings awaiting payment receipt upload from customer
+    const awaitingPaymentBookings = bookings.filter(b => b.paymentStatus === 'pending' && b.status !== 'cancelled');
+    // Bookings with payment submitted, awaiting owner verification
     const pendingBookings = bookings.filter(b => b.paymentStatus === 'submitted' && b.status !== 'cancelled');
     const confirmedBookings = bookings.filter(b => b.paymentStatus === 'verified' && b.status !== 'cancelled');
     const rejectedBookings = bookings.filter(b => b.paymentStatus === 'rejected');
@@ -164,6 +167,61 @@ const BookingVerificationDashboard: React.FC = () => {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6">
             <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-white">📋 Booking Management</h1>
+
+            {/* Awaiting Payment Section - New bookings not yet paid */}
+            {awaitingPaymentBookings.length > 0 && (
+                <div className="mb-8">
+                    <h2 className="text-xl md:text-2xl font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+                        💳 Awaiting Payment
+                        <span className="bg-blue-500 text-white text-sm px-3 py-1 rounded-full">
+                            {awaitingPaymentBookings.length}
+                        </span>
+                    </h2>
+                    <div className="grid gap-4">
+                        {awaitingPaymentBookings.map(booking => (
+                            <div key={booking.id} className="bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-4 md:p-6 shadow-sm">
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                                    <div>
+                                        <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">{booking.hostelId.name}</h3>
+                                        <p className="text-gray-600 dark:text-gray-400">{booking.hostelId.location}</p>
+                                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400">
+                                            <div className="flex items-center gap-2">
+                                                <User className="w-4 h-4" />
+                                                <span>{booking.customerId.firstName} {booking.customerId.lastName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Phone className="w-4 h-4" />
+                                                <span>{booking.customerId.contactNumber || 'No phone'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4" />
+                                                <span>{formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="md:text-right">
+                                        <div className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">
+                                            PKR {booking.totalPrice.toLocaleString()}
+                                        </div>
+                                        <div className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                                            Customer hasn't paid yet
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedBooking(booking);
+                                                setShowCancelModal(true);
+                                            }}
+                                            className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium hover:underline"
+                                        >
+                                            Cancel Booking
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Pending Payments Section */}
             <div className="mb-8">
