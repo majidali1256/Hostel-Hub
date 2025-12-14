@@ -60,6 +60,7 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ onHostelClick }) 
             }
         } catch (err: any) {
             console.error('Recommendations error:', err);
+            setError('Showing top hostels (AI temporarily unavailable)');
 
             // Fallback: Load top-rated hostels
             try {
@@ -75,6 +76,8 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ onHostelClick }) 
                         rank: i + 1,
                         reason: 'Top rated hostel'
                     })));
+                } else {
+                    setError('Unable to load hostels');
                 }
             } catch {
                 setError('Unable to load hostels');
@@ -119,8 +122,23 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ onHostelClick }) 
         );
     }
 
-    if (recommendations.length === 0) {
-        return null;
+    if (recommendations.length === 0 && !error) {
+        return (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-lg shadow-sm border border-blue-200 dark:border-gray-600 p-6 mb-6">
+                <div className="flex items-center space-x-2 mb-4">
+                    <span className="text-2xl">🤖</span>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        Recommended for You
+                    </h2>
+                    <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">
+                        AI
+                    </span>
+                </div>
+                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                    No recommendations available. Browse hostels below!
+                </div>
+            </div>
+        );
     }
 
     return (
