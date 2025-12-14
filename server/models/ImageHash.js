@@ -26,8 +26,7 @@ const imageHashSchema = new mongoose.Schema({
     }
 });
 
-// Index for efficient hash lookups
-imageHashSchema.index({ hash: 1 });
+// Index for efficient lookups (hash already has index: true in field)
 imageHashSchema.index({ hostelId: 1 });
 
 module.exports = mongoose.model('ImageHash', imageHashSchema);

@@ -95,8 +95,7 @@ const notificationPreferencesSchema = new mongoose.Schema({
     }
 });
 
-// Index
-notificationPreferencesSchema.index({ userId: 1 });
+// Note: userId already has unique: true which creates an index
 
 // Method to check if email should be sent
 notificationPreferencesSchema.methods.shouldSendEmail = function (type) {

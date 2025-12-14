@@ -26,8 +26,7 @@ const imageFingerprintSchema = new mongoose.Schema({
     }
 });
 
-// Indexes
-imageFingerprintSchema.index({ fingerprint: 1 });
+// Index for efficient lookups (hash already has index: true in field)
 imageFingerprintSchema.index({ hostelId: 1 });
 imageFingerprintSchema.index({ uploadedBy: 1 });
 

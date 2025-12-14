@@ -75,8 +75,7 @@ const trustScoreSchema = new mongoose.Schema({
     }
 });
 
-// Index
-trustScoreSchema.index({ userId: 1 });
+// Index (userId already has unique: true which creates an index)
 trustScoreSchema.index({ score: -1 });
 
 // Method to calculate trust score

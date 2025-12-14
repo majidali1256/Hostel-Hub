@@ -103,8 +103,7 @@ const roommatePreferencesSchema = new mongoose.Schema({
     }
 });
 
-// Indexes
-roommatePreferencesSchema.index({ userId: 1 });
+// Indexes (userId already has unique: true which creates an index)
 roommatePreferencesSchema.index({ lookingForRoommate: 1 });
 roommatePreferencesSchema.index({ 'budgetRange.min': 1, 'budgetRange.max': 1 });
 
