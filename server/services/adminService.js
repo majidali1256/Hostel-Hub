@@ -174,23 +174,44 @@ class AdminService {
     }
 
     /**
-     * Get system settings
+     * Get system settings as an object
      */
     static async getSettings() {
-        return SystemSetting.find().sort({ group: 1, key: 1 });
+        const settingsArray = await SystemSetting.find().sort({ group: 1, key: 1 });
+
+        // Convert array to object for frontend
+        const settingsObject = {};
+        settingsArray.forEach(s => {
+            settingsObject[s.key] = s.value;
+        });
+
+        return { settings: settingsObject };
     }
 
     /**
-     * Update system setting
+     * Update system setting (creates if doesn't exist)
      */
     static async updateSetting(adminId, key, value, ipAddress) {
-        const setting = await SystemSetting.findOne({ key });
-        if (!setting) throw new Error('Setting not found');
+        // Determine the type based on the value
+        let type = 'string';
+        if (typeof value === 'boolean') type = 'boolean';
+        else if (typeof value === 'number') type = 'number';
+        else if (typeof value === 'object') type = 'json';
 
-        const oldValue = setting.value;
-        setting.value = value;
-        setting.lastUpdatedBy = adminId;
-        await setting.save();
+        // Use findOneAndUpdate with upsert to create if doesn't exist
+        const setting = await SystemSetting.findOneAndUpdate(
+            { key },
+            {
+                $set: {
+                    value,
+                    type,
+                    lastUpdatedBy: adminId,
+                    description: `System setting: ${key}`,
+                    group: 'general'
+                }
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
         // Log action
         await AdminLog.logAction(
@@ -198,7 +219,7 @@ class AdminService {
             'update_setting',
             setting._id,
             'SystemSetting',
-            { key, oldValue, newValue: value },
+            { key, newValue: value },
             ipAddress
         );
 
