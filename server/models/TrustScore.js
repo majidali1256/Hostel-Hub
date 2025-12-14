@@ -54,6 +54,17 @@ const trustScoreSchema = new mongoose.Schema({
         accountAge: {
             type: Number,
             default: 0 // in days
+        },
+        // Document verification status: none, submitted, verified, rejected
+        documentStatus: {
+            type: String,
+            enum: ['none', 'submitted', 'verified', 'rejected'],
+            default: 'none'
+        },
+        // Number of reports against this user
+        reportsCount: {
+            type: Number,
+            default: 0
         }
     },
     // Achievement badges
@@ -78,42 +89,33 @@ const trustScoreSchema = new mongoose.Schema({
 // Index (userId already has unique: true which creates an index)
 trustScoreSchema.index({ score: -1 });
 
-// Method to calculate trust score
+// Method to calculate trust score based on document verification and reports
 trustScoreSchema.methods.calculate = async function () {
-    let score = 0;
     const factors = this.factors;
+    let score = 50; // Base score for all users
 
-    // Email verification: 10 points
-    if (factors.verifiedEmail) score += 10;
-
-    // Phone verification: 10 points
-    if (factors.verifiedPhone) score += 10;
-
-    // ID verification: 15 points
-    if (factors.verifiedId) score += 15;
-
-    // Completed bookings: up to 20 points
-    score += Math.min(factors.completedBookings * 2, 20);
-
-    // Response rate: up to 15 points
-    score += (factors.responseRate / 100) * 15;
-
-    // Response time: up to 10 points (faster = better)
-    if (factors.responseTime > 0) {
-        const responseScore = Math.max(0, 10 - (factors.responseTime / 24) * 2);
-        score += responseScore;
+    // Document verification status
+    switch (factors.documentStatus) {
+        case 'submitted':
+            score = 75; // Documents submitted, pending verification
+            break;
+        case 'verified':
+            score = 100; // Documents verified by admin
+            break;
+        case 'rejected':
+            score = 50; // Documents rejected, back to base
+            break;
+        case 'none':
+        default:
+            score = 50; // No documents submitted
     }
 
-    // Low cancellation rate: up to 10 points
-    score += Math.max(0, 10 - (factors.cancellationRate / 10));
+    // Deduct points for reports against user (5 points per report)
+    if (factors.reportsCount > 0) {
+        score = Math.max(0, score - (factors.reportsCount * 5));
+    }
 
-    // Positive reviews: up to 10 points
-    score += Math.min(factors.positiveReviews, 10);
-
-    // Account age: up to 10 points (1 point per 30 days, max 300 days)
-    score += Math.min(factors.accountAge / 30, 10);
-
-    this.score = Math.min(Math.round(score), 100);
+    this.score = Math.max(0, Math.min(Math.round(score), 100));
     this.lastCalculated = new Date();
 
     // Assign badges based on score and factors
@@ -170,7 +172,8 @@ trustScoreSchema.statics.updateForUser = async function (userId) {
     const User = mongoose.model('User');
     const Booking = mongoose.model('Booking');
     const Review = mongoose.model('Review');
-    const Message = mongoose.model('Message');
+    const Verification = mongoose.model('Verification');
+    const FraudReport = mongoose.model('FraudReport');
 
     let trustScore = await this.findOne({ userId });
     if (!trustScore) {
@@ -188,6 +191,43 @@ trustScoreSchema.statics.updateForUser = async function (userId) {
     // Calculate account age
     const accountAge = Math.floor((Date.now() - user.createdAt) / (1000 * 60 * 60 * 24));
     trustScore.factors.accountAge = accountAge;
+
+    // Get document verification status from Verification model
+    try {
+        const verification = await Verification.findOne({
+            userId,
+            type: 'identity'
+        }).sort({ createdAt: -1 });
+
+        if (verification) {
+            if (verification.status === 'approved' || verification.status === 'verified') {
+                trustScore.factors.documentStatus = 'verified';
+            } else if (verification.status === 'rejected') {
+                trustScore.factors.documentStatus = 'rejected';
+            } else if (verification.status === 'pending') {
+                trustScore.factors.documentStatus = 'submitted';
+            } else {
+                trustScore.factors.documentStatus = 'none';
+            }
+        } else {
+            trustScore.factors.documentStatus = 'none';
+        }
+    } catch (err) {
+        console.error('Error checking verification status:', err);
+        trustScore.factors.documentStatus = 'none';
+    }
+
+    // Count reports against this user
+    try {
+        const reportsCount = await FraudReport.countDocuments({
+            reportedUserId: userId,
+            status: { $in: ['pending', 'investigating', 'confirmed'] }
+        });
+        trustScore.factors.reportsCount = reportsCount;
+    } catch (err) {
+        console.error('Error counting reports:', err);
+        trustScore.factors.reportsCount = 0;
+    }
 
     // Count completed bookings
     const completedBookings = await Booking.countDocuments({
