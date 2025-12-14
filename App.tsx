@@ -62,7 +62,7 @@ const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingHostel, setEditingHostel] = useState<Hostel | null>(null);
 
-  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator' | 'booking-history' | 'appointments'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history' | 'appointments'>('dashboard');
   const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
   const [selectedHostelOwner, setSelectedHostelOwner] = useState<User | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -202,7 +202,7 @@ const App: React.FC = () => {
     setIsMenuOpen(false);
   };
 
-  const handleNavigate = (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator' | 'booking-history') => {
+  const handleNavigate = (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history') => {
     setSelectedHostel(null);
     setCurrentView(view);
     setIsMenuOpen(false);
@@ -711,6 +711,7 @@ const App: React.FC = () => {
     if (currentView === 'agreements') return 'Agreements';
     if (currentView === 'admin') return 'Admin Dashboard';
     if (currentView === 'rent-estimator') return 'Fair Rent Estimator';
+    if (currentView === 'bookings') return 'Manage Bookings';
     if (currentView === 'booking-history') return 'My Bookings';
     return 'Dashboard';
   }
@@ -739,6 +740,8 @@ const App: React.FC = () => {
         return <FairRentEstimator onClose={() => setCurrentView('dashboard')} />;
       case 'booking-history':
         return <BookingHistory />;
+      case 'bookings':
+        return <BookingVerificationDashboard />;
       case 'appointments':
         return <AppointmentDashboard userRole={user.role as 'owner' | 'customer'} userId={user.id} />;
       case 'dashboard':
