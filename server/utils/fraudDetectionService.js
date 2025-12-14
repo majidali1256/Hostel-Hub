@@ -192,7 +192,7 @@ async function analyzeTextWithAI(title, description) {
             return null;
         }
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         const prompt = `
 Analyze this hostel listing for fraud/scam indicators:

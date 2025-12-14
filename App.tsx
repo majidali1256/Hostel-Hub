@@ -231,7 +231,8 @@ const App: React.FC = () => {
       roomCategories: filterState.roomCategories || [],
       genderPreference: filterState.genderPreference || 'any',
       minRating: filterState.minRating || 0,
-      verifiedOnly: filterState.verifiedOnly || false
+      verifiedOnly: filterState.verifiedOnly || false,
+      location: filterState.location || ''
     };
 
     console.log('=== FILTER DEBUG ===');
@@ -517,7 +518,12 @@ const App: React.FC = () => {
         // Verified - only if checked
         const verifiedMatch = !searchFilters.verifiedOnly || hostel.verified === true;
 
-        filterMatch = priceMatch && amenitiesMatch && roomCategoryMatch && genderMatch && ratingMatch && verifiedMatch;
+        // Location - only if selected
+        const locationMatch = !searchFilters.location ||
+          searchFilters.location === '' ||
+          (hostel.location && hostel.location.toLowerCase().includes(searchFilters.location.toLowerCase()));
+
+        filterMatch = priceMatch && amenitiesMatch && roomCategoryMatch && genderMatch && ratingMatch && verifiedMatch && locationMatch;
       }
 
       return textMatch && filterMatch;

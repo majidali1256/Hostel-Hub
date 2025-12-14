@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 
@@ -14,6 +14,7 @@ export interface FilterState {
     genderPreference: string;
     minRating: number;
     verifiedOnly: boolean;
+    location: string;
 }
 
 const AMENITIES_LIST = ['WiFi', 'Parking', 'Kitchen', 'Laundry', 'AC', 'Gym', 'Security'];
@@ -26,6 +27,26 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
     const [genderPreference, setGenderPreference] = useState<string>('any');
     const [minRating, setMinRating] = useState<number>(0);
     const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
+    const [selectedLocation, setSelectedLocation] = useState<string>('');
+    const [availableLocations, setAvailableLocations] = useState<string[]>([]);
+
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+    // Fetch available locations on mount
+    useEffect(() => {
+        const fetchLocations = async () => {
+            try {
+                const res = await fetch(`${apiUrl}/api/search/filters`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setAvailableLocations(data.locations || []);
+                }
+            } catch (error) {
+                console.error('Error fetching locations:', error);
+            }
+        };
+        fetchLocations();
+    }, []);
 
     const toggleAmenity = (amenity: string) => {
         setSelectedAmenities(prev =>
@@ -44,7 +65,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
             roomCategories: selectedRoomCategories,
             genderPreference,
             minRating,
-            verifiedOnly
+            verifiedOnly,
+            location: selectedLocation
         };
         onApplyFilters(filters);
     };
@@ -56,6 +78,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
         setGenderPreference('any');
         setMinRating(0);
         setVerifiedOnly(false);
+        setSelectedLocation('');
         onClearFilters();
     };
 
@@ -66,7 +89,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
         selectedRoomCategories.length > 0 ||
         genderPreference !== 'any' ||
         minRating > 0 ||
-        verifiedOnly;
+        verifiedOnly ||
+        selectedLocation !== '';
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-6">
@@ -107,6 +131,27 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onApplyFilters, onClearFi
                     <span>Rs {priceRange[1].toLocaleString()}</span>
                 </div>
             </div>
+
+            {/* Location Filter */}
+            {availableLocations.length > 0 && (
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        📍 Location
+                    </label>
+                    <select
+                        value={selectedLocation}
+                        onChange={(e) => setSelectedLocation(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">All Locations</option>
+                        {availableLocations.map((location) => (
+                            <option key={location} value={location}>
+                                {location}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             {/* Amenities */}
             <div>
