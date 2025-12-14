@@ -26,14 +26,15 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ onHostelClick }) 
             setIsLoading(true);
             setError(null);
 
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             if (!token) {
                 setError('Please log in to see personalized recommendations');
                 setIsLoading(false);
                 return;
             }
 
-            const res = await fetch('http://localhost:5001/api/hostels/recommendations', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const res = await fetch(`${apiUrl}/api/search/recommendations`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -41,17 +42,29 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({ onHostelClick }) 
 
             if (res.ok) {
                 const data = await res.json();
-                setRecommendations(data);
+                // Handle new API format with hostels array
+                const hostels = data.hostels || data;
+                const isAiPowered = data.aiPowered !== false;
+
+                if (!isAiPowered) {
+                    setError('Showing top hostels (AI temporarily unavailable)');
+                }
+
+                setRecommendations(hostels.map((h: any, i: number) => ({
+                    hostel: h,
+                    rank: i + 1,
+                    reason: h.aiReason || (isAiPowered ? 'Recommended based on your preferences' : 'Top rated hostel')
+                })));
             } else {
                 throw new Error('Failed to load recommendations');
             }
         } catch (err: any) {
             console.error('Recommendations error:', err);
-            setError('Unable to load recommendations. Showing top hostels instead.');
 
             // Fallback: Load top-rated hostels
             try {
-                const res = await fetch('http://localhost:5001/api/hostels');
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+                const res = await fetch(`${apiUrl}/api/hostels`);
                 if (res.ok) {
                     const hostels = await res.json();
                     const topHostels = hostels

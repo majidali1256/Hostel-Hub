@@ -988,10 +988,19 @@ app.get('/api/search/recommendations', authMiddleware, async (req, res) => {
         };
 
         const recommendations = await searchService.getRecommendations(req.userId, userProfile);
-        res.json(recommendations);
+        res.json({ hostels: recommendations, aiPowered: true });
     } catch (error) {
-        console.error('Recommendations error:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Recommendations error:', error.message);
+        // Fallback: return top-rated hostels instead of error
+        try {
+            const topHostels = await Hostel.find({ isActive: true })
+                .sort({ rating: -1, reviewCount: -1 })
+                .limit(8)
+                .populate('ownerId', 'firstName lastName');
+            res.json({ hostels: topHostels, aiPowered: false });
+        } catch (fallbackError) {
+            res.status(500).json({ error: 'Failed to load recommendations' });
+        }
     }
 });
 
