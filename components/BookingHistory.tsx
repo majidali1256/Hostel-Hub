@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/mongoService';
 import CancellationModal from './CancellationModal';
+import PaymentReceiptUpload from './PaymentReceiptUpload';
 
 interface Booking {
     _id: string;
@@ -35,6 +36,8 @@ const BookingHistory: React.FC = () => {
     const [showReceiptModal, setShowReceiptModal] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelLoading, setCancelLoading] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentStep, setPaymentStep] = useState<'instructions' | 'upload'>('instructions');
 
     useEffect(() => {
         fetchBookings();
@@ -247,6 +250,25 @@ const BookingHistory: React.FC = () => {
                                 </div>
                             )}
 
+                            {/* Confirm Booking Button - for pending payment bookings */}
+                            {booking.paymentStatus === 'pending' && booking.status === 'pending' && (
+                                <div className="mt-4 border-t pt-4">
+                                    <button
+                                        onClick={() => {
+                                            setSelectedBooking(booking);
+                                            setPaymentStep('instructions');
+                                            setShowPaymentModal(true);
+                                        }}
+                                        className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center gap-2"
+                                    >
+                                        💳 Confirm Booking & Pay
+                                    </button>
+                                    <p className="text-sm text-gray-500 mt-2 text-center">
+                                        Click to view bank details and submit payment proof
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Cancel Button */}
                             {(booking.status === 'pending' || booking.status === 'confirmed') && (
                                 <div className="mt-4 flex justify-end">
@@ -323,6 +345,108 @@ const BookingHistory: React.FC = () => {
                                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
                                     <strong>Rejection Reason:</strong> {selectedBooking.paymentReceipt.rejectionReason}
                                 </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Payment Modal */}
+            {showPaymentModal && selectedBooking && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                        {paymentStep === 'instructions' ? '💳 Payment Instructions' : '📤 Upload Payment Proof'}
+                                    </h2>
+                                    <p className="text-gray-600 dark:text-gray-400 mt-1">
+                                        Booking: {selectedBooking.hostelId.name}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowPaymentModal(false);
+                                        setSelectedBooking(null);
+                                        setPaymentStep('instructions');
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {/* Progress Steps */}
+                            <div className="flex items-center justify-center gap-4 mb-6">
+                                <div className={`flex items-center gap-2 ${paymentStep === 'instructions' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`}>
+                                    <span className={`w-8 h-8 rounded-full flex items-center justify-center ${paymentStep === 'instructions' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'}`}>1</span>
+                                    <span className="font-medium">Bank Details</span>
+                                </div>
+                                <div className="w-16 h-1 bg-gray-200 dark:bg-gray-700">
+                                    <div className={`h-full bg-blue-600 transition-all ${paymentStep === 'upload' ? 'w-full' : 'w-0'}`} />
+                                </div>
+                                <div className={`flex items-center gap-2 ${paymentStep === 'upload' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
+                                    <span className={`w-8 h-8 rounded-full flex items-center justify-center ${paymentStep === 'upload' ? 'bg-blue-600 text-white' : 'bg-gray-300 dark:bg-gray-600'}`}>2</span>
+                                    <span className="font-medium">Upload Proof</span>
+                                </div>
+                            </div>
+
+                            {paymentStep === 'instructions' ? (
+                                <>
+                                    <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+                                        <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-4">Payment Details</h3>
+                                        <div className="space-y-3 text-gray-700 dark:text-gray-300">
+                                            <p><strong>Amount:</strong> PKR {selectedBooking.totalPrice.toLocaleString()}</p>
+                                            <p><strong>Hostel:</strong> {selectedBooking.hostelId.name}</p>
+                                            <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 mt-4">
+                                                <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-2">⚠️ Payment Instructions:</p>
+                                                <ol className="list-decimal list-inside space-y-1 text-sm text-yellow-700 dark:text-yellow-300">
+                                                    <li>Contact the hostel owner for bank details</li>
+                                                    <li>Make the payment via bank transfer, JazzCash, or EasyPaisa</li>
+                                                    <li>Keep your payment receipt/screenshot</li>
+                                                    <li>Click "Next" to upload your payment proof</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 flex gap-3">
+                                        <button
+                                            onClick={() => setPaymentStep('upload')}
+                                            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition font-semibold"
+                                        >
+                                            I've Made the Payment → Upload Proof
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <PaymentReceiptUpload
+                                        bookingId={selectedBooking._id}
+                                        onSuccess={() => {
+                                            setShowPaymentModal(false);
+                                            setSelectedBooking(null);
+                                            setPaymentStep('instructions');
+                                            fetchBookings(); // Refresh the list
+                                            alert('Payment proof submitted! The owner will verify your payment.');
+                                        }}
+                                        onCancel={() => {
+                                            setShowPaymentModal(false);
+                                            setSelectedBooking(null);
+                                            setPaymentStep('instructions');
+                                        }}
+                                    />
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={() => setPaymentStep('instructions')}
+                                            className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                                        >
+                                            ← Back to bank details
+                                        </button>
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
