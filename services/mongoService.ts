@@ -967,9 +967,12 @@ export const api = {
         }
     },
     verification: {
-        uploadDocument: async (file: File) => {
+        uploadDocument: async (file: File, documentName?: string) => {
             const formData = new FormData();
             formData.append('document', file);
+            if (documentName) {
+                formData.append('documentName', documentName);
+            }
             const res = await fetch(`${API_URL}/verification/upload`, {
                 method: 'POST',
                 headers: {

@@ -147,8 +147,8 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
         </div>
       </div>
 
-      {/* Trust Score Card - For Owners and Customers */}
-      {(user.role === 'owner' || user.role === 'customer') && trustScore && (
+      {/* Trust Score Card - For Owners Only */}
+      {user.role === 'owner' && trustScore && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200">Trust Score</h2>
@@ -256,12 +256,12 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
         </div>
       ) : (
         <>
-          {/* Identity Verification Section - Only for non-admin users */}
-          <IdentityVerification />
-
           {/* Role-specific content */}
           {user.role === 'owner' ? (
             <>
+              {/* Identity Verification Section - Only for Owners */}
+              <IdentityVerification />
+
               <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
                 <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">My Hostel Listings ({userHostels.length})</h2>
                 {userHostels.length > 0 ? (

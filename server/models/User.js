@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema({
         default: 'unverified'
     },
     idDocument: String, // Path to uploaded document
+    documentName: String, // Name/type of document (e.g., CNIC, Student ID)
     verificationDate: Date,
     rejectionReason: String,
     // Bank details for Pakistani payment system

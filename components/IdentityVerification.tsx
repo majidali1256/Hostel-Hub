@@ -5,6 +5,7 @@ import Button from './Button';
 interface VerificationStatus {
     status: 'unverified' | 'pending' | 'verified' | 'rejected';
     document?: string;
+    documentName?: string;
     rejectionReason?: string;
     verificationDate?: string;
 }
@@ -14,6 +15,7 @@ const IdentityVerification: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    const [documentName, setDocumentName] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
@@ -42,6 +44,10 @@ const IdentityVerification: React.FC = () => {
     };
 
     const handleUpload = async () => {
+        if (!documentName.trim()) {
+            setError('Please enter a document name (e.g., CNIC, Student ID).');
+            return;
+        }
         if (!file) {
             setError('Please select a file first.');
             return;
@@ -52,10 +58,11 @@ const IdentityVerification: React.FC = () => {
         setSuccess(null);
 
         try {
-            const res = await api.verification.uploadDocument(file);
-            setStatus(prev => ({ ...prev, status: res.status, document: res.documentPath } as VerificationStatus));
+            const res = await api.verification.uploadDocument(file, documentName.trim());
+            setStatus(prev => ({ ...prev, status: res.status, document: res.documentPath, documentName: documentName.trim() } as VerificationStatus));
             setSuccess('Document uploaded successfully! Verification is pending.');
             setFile(null);
+            setDocumentName('');
         } catch (err: any) {
             setError(err.message || 'Failed to upload document.');
         } finally {
@@ -75,9 +82,9 @@ const IdentityVerification: React.FC = () => {
             <div className="mb-6">
                 <div className="flex items-center gap-4 mb-4">
                     <div className={`text-lg font-semibold px-4 py-2 rounded-full ${status?.status === 'verified' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
-                            status?.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' :
-                                status?.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
-                                    'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                        status?.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' :
+                            status?.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+                                'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                         }`}>
                         Status: {status?.status ? status.status.charAt(0).toUpperCase() + status.status.slice(1) : 'Unverified'}
                     </div>
@@ -104,6 +111,21 @@ const IdentityVerification: React.FC = () => {
                             This helps build trust in the Hostel Hub community.
                         </p>
 
+                        {/* Document Name Input */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Document Type <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={documentName}
+                                onChange={(e) => setDocumentName(e.target.value)}
+                                placeholder="e.g., CNIC, Student ID, Passport"
+                                className="w-full sm:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+
+                        {/* File Upload */}
                         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                             <input
                                 type="file"
@@ -120,7 +142,7 @@ const IdentityVerification: React.FC = () => {
                             />
                             <Button
                                 onClick={handleUpload}
-                                disabled={!file || uploading}
+                                disabled={!file || !documentName.trim() || uploading}
                                 className="w-full sm:w-auto"
                             >
                                 {uploading ? 'Uploading...' : '📤 Upload Document'}

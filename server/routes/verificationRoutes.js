@@ -48,6 +48,7 @@ router.post('/upload', authMiddleware, upload.single('document'), async (req, re
         }
 
         user.idDocument = req.file.path;
+        user.documentName = req.body.documentName || 'ID Document'; // Save document name
         user.verificationStatus = 'pending';
         user.trustScore = 75; // Trust score increases to 75 on document submission
         user.rejectionReason = undefined; // Clear previous rejection reason
@@ -56,7 +57,8 @@ router.post('/upload', authMiddleware, upload.single('document'), async (req, re
         res.json({
             message: 'Document uploaded successfully',
             status: user.verificationStatus,
-            documentPath: req.file.path
+            documentPath: req.file.path,
+            documentName: user.documentName
         });
     } catch (error) {
         console.error('Upload error:', error);
