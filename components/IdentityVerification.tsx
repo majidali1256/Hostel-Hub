@@ -27,6 +27,8 @@ const IdentityVerification: React.FC = () => {
             setStatus(data);
         } catch (err) {
             console.error('Error fetching verification status:', err);
+            // If API fails, default to unverified so user can still upload
+            setStatus({ status: 'unverified' });
         } finally {
             setLoading(false);
         }
@@ -61,18 +63,21 @@ const IdentityVerification: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="p-4 text-center">Loading verification status...</div>;
+    // Check if user can upload documents
+    const canUpload = !status || status.status === 'unverified' || status.status === 'rejected';
+
+    if (loading) return <div className="p-4 text-center dark:text-gray-300">Loading verification status...</div>;
 
     return (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
-            <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">Identity Verification</h2>
+            <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">📋 Identity Verification</h2>
 
             <div className="mb-6">
                 <div className="flex items-center gap-4 mb-4">
-                    <div className={`text-lg font-semibold px-4 py-2 rounded-full ${status?.status === 'verified' ? 'bg-green-100 text-green-800' :
-                        status?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            status?.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
+                    <div className={`text-lg font-semibold px-4 py-2 rounded-full ${status?.status === 'verified' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+                            status?.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' :
+                                status?.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+                                    'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                         }`}>
                         Status: {status?.status ? status.status.charAt(0).toUpperCase() + status.status.slice(1) : 'Unverified'}
                     </div>
@@ -88,11 +93,11 @@ const IdentityVerification: React.FC = () => {
                     <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800 mb-4">
                         <p className="font-semibold text-red-800 dark:text-red-200">Verification Rejected</p>
                         <p className="text-red-600 dark:text-red-300">{status.rejectionReason}</p>
-                        <p className="text-sm mt-2 text-red-500">Please upload a valid document (CNIC or Student Card).</p>
+                        <p className="text-sm mt-2 text-red-500 dark:text-red-400">Please upload a valid document (CNIC or Student Card).</p>
                     </div>
                 )}
 
-                {(status?.status === 'unverified' || status?.status === 'rejected' || !status) && (
+                {canUpload && (
                     <div className="space-y-4">
                         <p className="text-gray-600 dark:text-gray-300">
                             Please upload a clear image of your CNIC or Student ID Card to verify your identity.
@@ -104,7 +109,7 @@ const IdentityVerification: React.FC = () => {
                                 type="file"
                                 accept="image/*,.pdf"
                                 onChange={handleFileChange}
-                                className="block w-full text-sm text-gray-500
+                                className="block w-full text-sm text-gray-500 dark:text-gray-400
                                     file:mr-4 file:py-2 file:px-4
                                     file:rounded-full file:border-0
                                     file:text-sm file:font-semibold
@@ -118,7 +123,7 @@ const IdentityVerification: React.FC = () => {
                                 disabled={!file || uploading}
                                 className="w-full sm:w-auto"
                             >
-                                {uploading ? 'Uploading...' : 'Upload Document'}
+                                {uploading ? 'Uploading...' : '📤 Upload Document'}
                             </Button>
                         </div>
 
@@ -138,3 +143,4 @@ const IdentityVerification: React.FC = () => {
 };
 
 export default IdentityVerification;
+
