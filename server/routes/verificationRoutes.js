@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
+const TrustScore = require('../models/TrustScore');
 const { authMiddleware } = require('../middleware/auth');
 
 // Configure Multer for file upload
@@ -53,6 +54,20 @@ router.post('/upload', authMiddleware, upload.single('document'), async (req, re
         user.trustScore = 75; // Trust score increases to 75 on document submission
         user.rejectionReason = undefined; // Clear previous rejection reason
         await user.save();
+
+        // Update TrustScore model
+        try {
+            let trustScore = await TrustScore.findOne({ userId: user._id });
+            if (!trustScore) {
+                trustScore = new TrustScore({ userId: user._id });
+            }
+            trustScore.factors.documentStatus = 'submitted';
+            trustScore.score = 75;
+            trustScore.lastCalculated = new Date();
+            await trustScore.save();
+        } catch (tsError) {
+            console.error('Failed to update TrustScore:', tsError);
+        }
 
         res.json({
             message: 'Document uploaded successfully',
@@ -116,6 +131,20 @@ router.put('/review/:userId', authMiddleware, async (req, res) => {
         }
 
         await user.save();
+
+        // Update TrustScore model
+        try {
+            let trustScore = await TrustScore.findOne({ userId: user._id });
+            if (!trustScore) {
+                trustScore = new TrustScore({ userId: user._id });
+            }
+            trustScore.factors.documentStatus = status === 'verified' ? 'verified' : 'rejected';
+            trustScore.score = status === 'verified' ? 100 : 50;
+            trustScore.lastCalculated = new Date();
+            await trustScore.save();
+        } catch (tsError) {
+            console.error('Failed to update TrustScore:', tsError);
+        }
 
         res.json({
             message: `User verification ${status}`,
