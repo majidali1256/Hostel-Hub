@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { X, Calendar, User, Phone, CreditCard, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 import CancellationModal from './CancellationModal';
 
 interface Booking {
@@ -134,21 +135,24 @@ const BookingVerificationDashboard: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="text-lg">Loading bookings...</div>
+            <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
+                <div className="flex items-center gap-3 text-lg text-gray-700 dark:text-gray-300">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    Loading bookings...
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="max-w-7xl mx-auto p-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                    <h2 className="text-2xl font-bold text-red-800 mb-2">Error Loading Bookings</h2>
-                    <p className="text-red-600 mb-4">{error}</p>
+            <div className="max-w-7xl mx-auto p-4 md:p-6">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+                    <h2 className="text-xl md:text-2xl font-bold text-red-800 dark:text-red-200 mb-2">Error Loading Bookings</h2>
+                    <p className="text-red-600 dark:text-red-300 mb-4">{error}</p>
                     <button
                         onClick={fetchBookings}
-                        className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition"
+                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
                     >
                         Try Again
                     </button>
@@ -158,12 +162,12 @@ const BookingVerificationDashboard: React.FC = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-6">
-            <h1 className="text-3xl font-bold mb-6">📋 Booking Management</h1>
+        <div className="max-w-7xl mx-auto p-4 md:p-6">
+            <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-white">📋 Booking Management</h1>
 
             {/* Pending Payments Section */}
             <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <h2 className="text-xl md:text-2xl font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
                     ⏳ Pending Payment Verification
                     {pendingBookings.length > 0 && (
                         <span className="bg-orange-500 text-white text-sm px-3 py-1 rounded-full">
@@ -173,70 +177,74 @@ const BookingVerificationDashboard: React.FC = () => {
                 </h2>
 
                 {pendingBookings.length === 0 ? (
-                    <div className="bg-gray-50 p-8 rounded-lg text-center text-gray-500">
+                    <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
                         No pending payment verifications
                     </div>
                 ) : (
                     <div className="grid gap-4">
                         {pendingBookings.map(booking => (
-                            <div key={booking.id} className="bg-white border-2 border-orange-200 rounded-lg p-6 shadow-sm">
-                                <div className="flex justify-between items-start mb-4">
+                            <div key={booking.id} className="bg-white dark:bg-gray-800 border-2 border-orange-200 dark:border-orange-700 rounded-lg p-4 md:p-6 shadow-sm">
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4 gap-4">
                                     <div>
-                                        <h3 className="text-xl font-semibold">{booking.hostelId.name}</h3>
-                                        <p className="text-gray-600">{booking.hostelId.location}</p>
+                                        <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">{booking.hostelId.name}</h3>
+                                        <p className="text-gray-600 dark:text-gray-400">{booking.hostelId.location}</p>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-2xl font-bold text-green-600">
+                                    <div className="md:text-right">
+                                        <div className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">
                                             PKR {booking.totalPrice.toLocaleString()}
                                         </div>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                            <Calendar className="w-4 h-4" />
                                             {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                                    <div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-4 text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="flex items-center gap-2">
+                                        <User className="w-4 h-4 text-gray-500" />
                                         <span className="font-semibold">Customer:</span> {booking.customerId.firstName} {booking.customerId.lastName}
                                     </div>
-                                    <div>
+                                    <div className="flex items-center gap-2">
+                                        <Phone className="w-4 h-4 text-gray-500" />
                                         <span className="font-semibold">Contact:</span> {booking.customerId.contactNumber}
                                     </div>
-                                    <div>
-                                        <span className="font-semibold">Payment Method:</span> {booking.paymentMethod?.replace('_', ' ').toUpperCase()}
+                                    <div className="flex items-center gap-2">
+                                        <CreditCard className="w-4 h-4 text-gray-500" />
+                                        <span className="font-semibold">Payment:</span> {booking.paymentMethod?.replace('_', ' ').toUpperCase()}
                                     </div>
                                     {booking.transactionId && (
-                                        <div>
-                                            <span className="font-semibold">Transaction ID:</span> {booking.transactionId}
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold">Transaction:</span> {booking.transactionId}
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="flex gap-3">
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                                     <button
                                         onClick={() => {
                                             setSelectedBooking(booking);
                                             setShowReceiptModal(true);
                                         }}
-                                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
+                                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
                                     >
-                                        📷 View Receipt
+                                        <Eye className="w-4 h-4" /> View Receipt
                                     </button>
                                     <button
                                         onClick={() => handleVerifyPayment(booking.id, true)}
                                         disabled={processingId === booking.id}
-                                        className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                                        className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
                                     >
-                                        ✓ Approve
+                                        <CheckCircle className="w-4 h-4" /> Approve
                                     </button>
                                     <button
                                         onClick={() => {
                                             setSelectedBooking(booking);
                                             setShowReceiptModal(true);
                                         }}
-                                        className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition"
+                                        className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors"
                                     >
-                                        ✗ Reject
+                                        <XCircle className="w-4 h-4" /> Reject
                                     </button>
                                 </div>
                                 <div className="mt-3 text-right">
@@ -245,7 +253,7 @@ const BookingVerificationDashboard: React.FC = () => {
                                             setSelectedBooking(booking);
                                             setShowCancelModal(true);
                                         }}
-                                        className="text-red-600 hover:text-red-800 text-sm font-medium hover:underline"
+                                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium hover:underline"
                                     >
                                         Cancel Booking
                                     </button>
@@ -258,32 +266,36 @@ const BookingVerificationDashboard: React.FC = () => {
 
             {/* Confirmed Bookings */}
             <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">✅ Confirmed Bookings ({confirmedBookings.length})</h2>
+                <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
+                    ✅ Confirmed Bookings ({confirmedBookings.length})
+                </h2>
                 {confirmedBookings.length === 0 ? (
-                    <div className="bg-gray-50 p-8 rounded-lg text-center text-gray-500">
+                    <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
                         No confirmed bookings
                     </div>
                 ) : (
                     <div className="grid gap-4">
                         {confirmedBookings.map(booking => (
-                            <div key={booking.id} className="bg-white border border-green-200 rounded-lg p-4">
-                                <div className="flex justify-between items-center">
+                            <div key={booking.id} className="bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                     <div>
-                                        <h3 className="font-semibold">{booking.hostelId.name}</h3>
-                                        <p className="text-sm text-gray-600">
+                                        <h3 className="font-semibold text-gray-900 dark:text-white">{booking.hostelId.name}</h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
                                             {booking.customerId.firstName} {booking.customerId.lastName} •
                                             {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
                                         </p>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="font-bold text-green-600">PKR {booking.totalPrice.toLocaleString()}</div>
-                                        <div className="text-xs text-green-600 mb-1">✓ Confirmed</div>
+                                    <div className="sm:text-right">
+                                        <div className="font-bold text-green-600 dark:text-green-400">PKR {booking.totalPrice.toLocaleString()}</div>
+                                        <div className="text-xs text-green-600 dark:text-green-400 mb-1 flex items-center gap-1 sm:justify-end">
+                                            <CheckCircle className="w-3 h-3" /> Confirmed
+                                        </div>
                                         <button
                                             onClick={() => {
                                                 setSelectedBooking(booking);
                                                 setShowCancelModal(true);
                                             }}
-                                            className="text-red-600 hover:text-red-800 text-xs font-medium hover:underline"
+                                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-medium hover:underline"
                                         >
                                             Cancel
                                         </button>
@@ -297,26 +309,24 @@ const BookingVerificationDashboard: React.FC = () => {
 
             {/* Receipt Modal */}
             {showReceiptModal && selectedBooking && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-4 md:p-6">
                             <div className="flex justify-between items-start mb-4">
-                                <h2 className="text-2xl font-bold">Payment Receipt</h2>
+                                <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Payment Receipt</h2>
                                 <button
                                     onClick={() => {
                                         setShowReceiptModal(false);
                                         setSelectedBooking(null);
                                         setRejectionReason('');
                                     }}
-                                    className="text-gray-400 hover:text-gray-600"
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                                 >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    <X className="w-6 h-6" />
                                 </button>
                             </div>
 
-                            <div className="mb-4">
+                            <div className="mb-4 space-y-2 text-gray-700 dark:text-gray-300">
                                 <p><strong>Customer:</strong> {selectedBooking.customerId.firstName} {selectedBooking.customerId.lastName}</p>
                                 <p><strong>Amount:</strong> PKR {selectedBooking.totalPrice.toLocaleString()}</p>
                                 <p><strong>Payment Method:</strong> {selectedBooking.paymentMethod?.replace('_', ' ').toUpperCase()}</p>
@@ -330,38 +340,40 @@ const BookingVerificationDashboard: React.FC = () => {
                                     <img
                                         src={selectedBooking.paymentReceipt.image}
                                         alt="Payment Receipt"
-                                        className="w-full rounded-lg border"
+                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
                                     />
                                 </div>
                             )}
 
                             <div className="mb-4">
-                                <label className="block text-sm font-medium mb-2">
+                                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                                     Rejection Reason (if rejecting)
                                 </label>
                                 <textarea
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
-                                    className="w-full p-3 border rounded-lg"
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
                                     rows={3}
                                     placeholder="Enter reason for rejection..."
                                 />
                             </div>
 
-                            <div className="flex gap-3">
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <button
                                     onClick={() => handleVerifyPayment(selectedBooking.id, true)}
                                     disabled={processingId === selectedBooking.id}
-                                    className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors disabled:opacity-50"
                                 >
-                                    {processingId === selectedBooking.id ? 'Processing...' : '✓ Approve Payment'}
+                                    <CheckCircle className="w-5 h-5" />
+                                    {processingId === selectedBooking.id ? 'Processing...' : 'Approve Payment'}
                                 </button>
                                 <button
                                     onClick={() => handleVerifyPayment(selectedBooking.id, false)}
                                     disabled={processingId === selectedBooking.id || !rejectionReason}
-                                    className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg transition-colors disabled:opacity-50"
                                 >
-                                    {processingId === selectedBooking.id ? 'Processing...' : '✗ Reject Payment'}
+                                    <XCircle className="w-5 h-5" />
+                                    {processingId === selectedBooking.id ? 'Processing...' : 'Reject Payment'}
                                 </button>
                             </div>
                         </div>
