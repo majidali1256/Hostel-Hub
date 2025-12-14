@@ -137,16 +137,16 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-gray-200">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between items-start">
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Book {hostel.name}</h2>
-                            <p className="text-gray-600 mt-1">{hostel.location}</p>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Book {hostel.name}</h2>
+                            <p className="text-gray-600 dark:text-gray-400 mt-1">{hostel.location}</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -157,14 +157,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {error && (
-                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-600">{error}</p>
+                        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+                            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="checkIn" className="block text-sm font-medium text-gray-700 mb-2">
+                            <label htmlFor="checkIn" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Check-in Date
                             </label>
                             <input
@@ -174,12 +174,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                                 onChange={(e) => setCheckIn(e.target.value)}
                                 min={tomorrow}
                                 required
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             />
                         </div>
 
                         <div>
-                            <label htmlFor="checkOut" className="block text-sm font-medium text-gray-700 mb-2">
+                            <label htmlFor="checkOut" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Check-out Date
                             </label>
                             <input
@@ -189,13 +189,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                                 onChange={(e) => setCheckOut(e.target.value)}
                                 min={checkIn || tomorrow}
                                 required
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label htmlFor="guests" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="guests" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Number of Guests
                         </label>
                         <input
@@ -206,12 +206,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                             min={1}
                             max={10}
                             required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="requests" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="requests" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Special Requests (Optional)
                         </label>
                         <textarea
@@ -221,31 +221,31 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                             rows={3}
                             maxLength={500}
                             placeholder="Any special requirements or requests..."
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
                         />
-                        <p className="text-xs text-gray-500 mt-1">{specialRequests.length}/500 characters</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{specialRequests.length}/500 characters</p>
                     </div>
 
                     {/* Price Summary */}
                     {duration > 0 && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <h3 className="font-semibold text-gray-900 mb-3">Booking Summary</h3>
+                        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Booking Summary</h3>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-gray-600">Duration:</span>
-                                    <span className="font-medium">{duration} {duration === 1 ? 'day' : 'days'}</span>
+                                    <span className="text-gray-600 dark:text-gray-400">Duration:</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{duration} {duration === 1 ? 'day' : 'days'}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-600">Price per month:</span>
-                                    <span className="font-medium">Rs {hostel.price.toLocaleString()}</span>
+                                    <span className="text-gray-600 dark:text-gray-400">Price per month:</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">Rs {hostel.price.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-600">Number of guests:</span>
-                                    <span className="font-medium">{numberOfGuests}</span>
+                                    <span className="text-gray-600 dark:text-gray-400">Number of guests:</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{numberOfGuests}</span>
                                 </div>
-                                <div className="border-t border-blue-300 pt-2 mt-2 flex justify-between">
-                                    <span className="font-semibold text-gray-900">Total Price:</span>
-                                    <span className="font-bold text-blue-600 text-lg">Rs {totalPrice.toLocaleString()}</span>
+                                <div className="border-t border-blue-300 dark:border-blue-600 pt-2 mt-2 flex justify-between">
+                                    <span className="font-semibold text-gray-900 dark:text-white">Total Price:</span>
+                                    <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">Rs {totalPrice.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -270,7 +270,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                         </Button>
                     </div>
 
-                    <p className="text-xs text-gray-500 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                         Your booking request will be sent to the owner for confirmation.
                     </p>
                 </form>

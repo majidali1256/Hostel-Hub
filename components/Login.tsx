@@ -213,10 +213,10 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
     <>
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-gray-300" />
+          <div className="w-full border-t border-gray-300 dark:border-gray-600" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-gray-500">Or continue with</span>
+          <span className="bg-white dark:bg-gray-800 px-2 text-gray-500 dark:text-gray-400">Or continue with</span>
         </div>
       </div>
 
@@ -348,14 +348,14 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
             />
 
             <div className="space-y-2">
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 I am a
               </label>
               <select
                 id="role"
                 value={role}
                 onChange={(e) => setRole(e.target.value as 'owner' | 'customer')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="customer">Customer (Looking for hostels)</option>
                 <option value="owner">Owner (Listing hostels)</option>
@@ -372,7 +372,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               required
               forceLight
             />
-            <p className="text-xs text-gray-500 -mt-4 pl-1">Must contain at least one capital letter and one special character.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4 pl-1">Must contain at least one capital letter and one special character.</p>
             <Input
               id="confirmPassword"
               label="Confirm Password"
@@ -434,7 +434,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
     switch (view) {
       case 'forgotPassword':
         return (
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             Remember your password?{' '}
             <a href="#" className="font-medium text-blue-600 hover:text-blue-500" onClick={(e) => { e.preventDefault(); setView('login'); }}>
               Back to Login
@@ -443,7 +443,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
         );
       case 'signup':
         return (
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             Already have an account?{' '}
             <a href="#" className="font-medium text-blue-600 hover:text-blue-500" onClick={(e) => { e.preventDefault(); setView('login'); }}>
               Login
@@ -453,7 +453,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
       case 'login':
       default:
         return (
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             Don't have an account?{' '}
             <a href="#" className="font-medium text-blue-600 hover:text-blue-500" onClick={(e) => { e.preventDefault(); setView('signup'); }}>
               Sign up
@@ -464,31 +464,31 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-6 border border-gray-200">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6 border border-gray-200 dark:border-gray-700">
         <div className="text-center">
-          <div className="inline-block bg-blue-100 p-3 rounded-full mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="inline-block bg-blue-100 dark:bg-blue-900/50 p-3 rounded-full mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
             {renderTitle()}
           </h1>
-          <p className="text-gray-500 mt-2">
+          <p className="text-gray-500 dark:text-gray-400 mt-2">
             {renderSubtitle()}
           </p>
         </div>
         <form className="space-y-6" onSubmit={handleSubmit}>
 
-          {error && <p className="text-red-500 text-sm font-semibold text-center bg-red-50 p-3 rounded-md">{error}</p>}
-          {message && <p className="text-green-600 text-sm font-semibold text-center bg-green-50 p-3 rounded-md">{message}</p>}
+          {error && <p className="text-red-500 dark:text-red-400 text-sm font-semibold text-center bg-red-50 dark:bg-red-900/30 p-3 rounded-md">{error}</p>}
+          {message && <p className="text-green-600 dark:text-green-400 text-sm font-semibold text-center bg-green-50 dark:bg-green-900/30 p-3 rounded-md">{message}</p>}
 
           {renderFormContent()}
 
           <div className="text-sm text-center">
             {renderFooterLink()}
-            <div className="text-xs text-gray-400 mt-4">
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-4">
               <p>© 2025 Hostel Hub. All rights reserved.</p>
             </div>
           </div>
