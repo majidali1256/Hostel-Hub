@@ -557,7 +557,7 @@ const App: React.FC = () => {
   }
 
   if (!user) {
-    return <Login onSignUpSubmit={handleSignUp} />;
+    return <Login onLoginSuccess={handleLogin} onSignUpSubmit={handleSignUp} />;
   }
 
   if (user.role === 'pending') {
