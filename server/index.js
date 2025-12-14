@@ -1090,6 +1090,45 @@ app.get('/api/bookings', authMiddleware, async (req, res) => {
     }
 });
 
+// ==================== SPECIFIC BOOKING ROUTES (must come before :id route) ====================
+
+// Get current user's bookings (customer view)
+app.get('/api/bookings/my-bookings', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user?.userId || req.userId;
+        const bookings = await Booking.find({ customerId: userId })
+            .populate('hostelId', 'name location price images')
+            .sort({ createdAt: -1 });
+
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get bookings for owner's hostels (owner view)
+app.get('/api/bookings/my-hostel-bookings', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user?.userId || req.userId;
+
+        // Find all hostels owned by the user
+        const hostels = await Hostel.find({ ownerId: userId });
+        const hostelIds = hostels.map(h => h._id);
+
+        // Find all bookings for those hostels
+        const bookings = await Booking.find({ hostelId: { $in: hostelIds } })
+            .populate('hostelId', 'name location price images')
+            .populate('customerId', 'firstName lastName email contactNumber profilePicture')
+            .sort({ createdAt: -1 });
+
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== END SPECIFIC BOOKING ROUTES ====================
+
 // Get booking by ID
 app.get('/api/bookings/:id', authMiddleware, async (req, res) => {
     try {
