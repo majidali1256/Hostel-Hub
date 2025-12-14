@@ -147,8 +147,8 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
         </div>
       </div>
 
-      {/* Trust Score Card - Only for Owners */}
-      {user.role === 'owner' && trustScore && (
+      {/* Trust Score Card - For Owners and Customers */}
+      {(user.role === 'owner' || user.role === 'customer') && trustScore && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200">Trust Score</h2>

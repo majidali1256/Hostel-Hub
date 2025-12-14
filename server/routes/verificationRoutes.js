@@ -49,6 +49,7 @@ router.post('/upload', authMiddleware, upload.single('document'), async (req, re
 
         user.idDocument = req.file.path;
         user.verificationStatus = 'pending';
+        user.trustScore = 75; // Trust score increases to 75 on document submission
         user.rejectionReason = undefined; // Clear previous rejection reason
         await user.save();
 
@@ -106,8 +107,10 @@ router.put('/review/:userId', authMiddleware, async (req, res) => {
         if (status === 'verified') {
             user.verificationDate = new Date();
             user.rejectionReason = undefined;
+            user.trustScore = 100; // Trust score is 100 when verified
         } else if (status === 'rejected') {
             user.rejectionReason = reason || 'Document rejected';
+            user.trustScore = 50; // Trust score drops to 50 when rejected
         }
 
         await user.save();

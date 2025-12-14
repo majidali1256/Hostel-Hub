@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     contactNumber: String,
     stayHistory: [String],
     profilePicture: String,
-    trustScore: { type: Number, default: 0, min: 0, max: 100 }, // Calculated trust score 0-100
+    trustScore: { type: Number, default: 50, min: 0, max: 100 }, // Calculated trust score 0-100
     verificationDocuments: [String], // URLs to uploaded verification documents
     emailVerified: { type: Boolean, default: false },
     verificationToken: String,
