@@ -20,7 +20,7 @@ async function generateRecommendations(userProfile, hostels) {
             }));
         }
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
         // Prepare user context
         const userContext = `
@@ -145,7 +145,7 @@ async function rankHostels(searchCriteria, hostels) {
         }
 
         // For larger sets, use AI ranking
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
         const prompt = `
 Rank these hostels based on: ${JSON.stringify(searchCriteria)}

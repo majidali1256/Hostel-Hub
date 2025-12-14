@@ -6,7 +6,7 @@ let model;
 
 if (process.env.GEMINI_API_KEY) {
     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
     console.log('✨ Gemini AI initialized');
 } else {
     console.warn('⚠️  GEMINI_API_KEY not set. AI features will be disabled.');
