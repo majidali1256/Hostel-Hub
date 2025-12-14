@@ -158,7 +158,7 @@ const ReportsGenerator: React.FC = () => {
 
             {/* Error */}
             {error && (
-                <div className="p-4 bg-red-100 text-red-800 rounded-lg">{error}</div>
+                <div className="p-4 bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300 rounded-lg">{error}</div>
             )}
 
             {/* Report Display */}
@@ -166,7 +166,7 @@ const ReportsGenerator: React.FC = () => {
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">{report.type}</h3>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                             Generated: {formatDate(report.generatedAt)}
                         </span>
                     </div>
