@@ -164,6 +164,9 @@ router.get('/admin/all', authMiddleware, async (req, res) => {
     try {
         // Check if requesting user is admin
         const adminUser = await User.findById(req.user.userId);
+        if (!adminUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
         if (adminUser.role !== 'admin') {
             return res.status(403).json({ error: 'Access denied. Admin only.' });
         }

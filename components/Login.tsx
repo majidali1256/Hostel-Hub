@@ -221,11 +221,11 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
       </div>
 
       <div className="space-y-3">
-        <Button type="button" variant="secondary" fullWidth forceLight className="!font-semibold !bg-white !text-gray-600 border border-gray-300 hover:!bg-gray-50 flex items-center justify-center gap-3" onClick={() => handleSocialLogin('google')}>
+        <Button type="button" variant="secondary" fullWidth className="!font-semibold !bg-white dark:!bg-gray-700 !text-gray-600 dark:!text-gray-200 border border-gray-300 dark:border-gray-600 hover:!bg-gray-50 dark:hover:!bg-gray-600 flex items-center justify-center gap-3" onClick={() => handleSocialLogin('google')}>
           <GoogleIcon />
           <span>Continue with Google</span>
         </Button>
-        <Button type="button" variant="secondary" fullWidth forceLight className="!font-semibold !bg-white !text-gray-600 border border-gray-300 hover:!bg-gray-50 flex items-center justify-center gap-3" onClick={() => handleSocialLogin('facebook')}>
+        <Button type="button" variant="secondary" fullWidth className="!font-semibold !bg-white dark:!bg-gray-700 !text-gray-600 dark:!text-gray-200 border border-gray-300 dark:border-gray-600 hover:!bg-gray-50 dark:hover:!bg-gray-600 flex items-center justify-center gap-3" onClick={() => handleSocialLogin('facebook')}>
           <FacebookIcon />
           <span>Continue with Facebook</span>
         </Button>
@@ -246,7 +246,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setResetToken(e.target.value)}
               placeholder="Enter the code from your email"
               required
-              forceLight
+
             />
             <Input
               id="password"
@@ -256,7 +256,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              forceLight
+
             />
             <Input
               id="confirmPassword"
@@ -266,9 +266,9 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
               required
-              forceLight
+
             />
-            <Button type="submit" fullWidth disabled={isLoading} forceLight>
+            <Button type="submit" fullWidth disabled={isLoading} >
               {isLoading ? 'Resetting...' : 'Reset Password'}
             </Button>
           </>
@@ -284,9 +284,9 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              forceLight
+
             />
-            <Button type="submit" fullWidth disabled={isLoading} forceLight>
+            <Button type="submit" fullWidth disabled={isLoading} >
               {isLoading ? 'Sending...' : 'Send Reset Code'}
             </Button>
           </>
@@ -302,7 +302,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="e.g., majidali22"
               required
-              forceLight
+
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
@@ -313,7 +313,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Majid"
                 required
-                forceLight
+
               />
               <Input
                 id="lastName"
@@ -323,7 +323,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Ali"
                 required
-                forceLight
+
               />
             </div>
             <Input
@@ -334,7 +334,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              forceLight
+
             />
             <Input
               id="contactNumber"
@@ -344,7 +344,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setContactNumber(e.target.value)}
               placeholder="0300-1234567"
               required
-              forceLight
+
             />
 
             <div className="space-y-2">
@@ -370,7 +370,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              forceLight
+
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4 pl-1">Must contain at least one capital letter and one special character.</p>
             <Input
@@ -381,9 +381,9 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
               required
-              forceLight
+
             />
-            <Button type="submit" fullWidth disabled={isLoading} forceLight>
+            <Button type="submit" fullWidth disabled={isLoading} >
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
             {renderSocialButtons()}
@@ -401,7 +401,7 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              forceLight
+
             />
             <Input
               id="password"
@@ -418,9 +418,9 @@ const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              forceLight
+
             />
-            <Button type="submit" fullWidth disabled={isLoading} forceLight>
+            <Button type="submit" fullWidth disabled={isLoading} >
               {isLoading ? 'Logging In...' : 'Login'}
             </Button>
 
