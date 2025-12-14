@@ -137,9 +137,12 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
             <Button onClick={() => setIsEditing(!isEditing)} variant="secondary">
               {isEditing ? 'Cancel Editing' : 'Edit Profile'}
             </Button>
-            <Button onClick={onSwitchRole} className="w-full sm:w-auto">
-              Switch to {user.role === 'owner' ? 'Customer' : 'Owner'} View
-            </Button>
+            {/* Only show role switch for owner/customer, not for admin */}
+            {user.role !== 'admin' && (
+              <Button onClick={onSwitchRole} className="w-full sm:w-auto">
+                Switch to {user.role === 'owner' ? 'Customer' : 'Owner'} View
+              </Button>
+            )}
           </div>
         </div>
       </div>
