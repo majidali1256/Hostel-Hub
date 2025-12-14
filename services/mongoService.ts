@@ -242,7 +242,12 @@ export const api = {
             const res = await fetch(`${API_URL}/bookings/my-bookings`, {
                 headers: getAuthHeaders()
             });
-            return await res.json();
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to load bookings');
+            }
+            const data = await res.json();
+            return Array.isArray(data) ? data : [];
         },
         create: async (booking: any) => {
             const res = await fetch(`${API_URL}/bookings`, {
