@@ -91,8 +91,20 @@ const StarRating: React.FC<{ hostelId: string; userRating?: number; onRate: (id:
 
 
 const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack, onEdit, onDelete, onRate, onClearRating, onMarkAsStayed, onMessageOwner, onBook }) => {
-    const [mainImage, setMainImage] = useState(hostel.images[0] || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&q=80');
+    // Defensive null checks
+    const images = hostel?.images || [];
+    const defaultImage = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&q=80';
+    const [mainImage, setMainImage] = useState(images[0] || defaultImage);
     const [showReviewsModal, setShowReviewsModal] = useState(false);
+
+    // Guard against undefined hostel
+    if (!hostel) {
+        return (
+            <div className="max-w-5xl mx-auto p-8 text-center">
+                <p className="text-gray-600 dark:text-gray-400">Loading hostel details...</p>
+            </div>
+        );
+    }
 
     const isOwner = user.role === 'owner' && user.id === hostel.ownerId;
     const hasStayed = user.stayHistory?.includes(hostel.id) ?? false;
@@ -124,12 +136,12 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
 
     const nextImage = (e?: React.MouseEvent) => {
         e?.stopPropagation();
-        setLightboxIndex((prev) => (prev + 1) % hostel.images.length);
+        setLightboxIndex((prev) => (prev + 1) % (images.length || 1));
     };
 
     const prevImage = (e?: React.MouseEvent) => {
         e?.stopPropagation();
-        setLightboxIndex((prev) => (prev - 1 + hostel.images.length) % hostel.images.length);
+        setLightboxIndex((prev) => (prev - 1 + (images.length || 1)) % (images.length || 1));
     };
 
     // Keyboard navigation for lightbox
@@ -155,12 +167,12 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
                 {/* Image Gallery */}
                 <div className="grid grid-cols-1 md:grid-cols-2">
-                    <div className="p-4 cursor-pointer" onClick={() => openLightbox(hostel.images.indexOf(mainImage))}>
+                    <div className="p-4 cursor-pointer" onClick={() => openLightbox(images.indexOf(mainImage))}>
                         <img src={mainImage} alt={hostel.name} className="w-full h-96 object-cover rounded-lg hover:opacity-95 transition-opacity" />
                         <p className="text-center text-sm text-gray-500 mt-2">Click to view full screen</p>
                     </div>
                     <div className="p-4 grid grid-cols-4 gap-1 overflow-y-auto max-h-96 content-start">
-                        {hostel.images.map((img, idx) => (
+                        {images.map((img, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => setMainImage(img)}
@@ -184,7 +196,7 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                         </button>
 
                         <img
-                            src={hostel.images[lightboxIndex]}
+                            src={images[lightboxIndex] || defaultImage}
                             alt={`Full screen view ${lightboxIndex + 1}`}
                             className="max-h-[90vh] max-w-[90vw] object-contain"
                             onClick={(e) => e.stopPropagation()}
@@ -195,7 +207,7 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                         </button>
 
                         <div className="absolute bottom-4 left-0 right-0 text-center text-white text-sm">
-                            {lightboxIndex + 1} / {hostel.images.length}
+                            {lightboxIndex + 1} / {images.length || 1}
                         </div>
                     </div>
                 )}
