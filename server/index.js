@@ -50,6 +50,71 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Setup admin user - one-time use
+app.post('/api/setup/admin', async (req, res) => {
+    try {
+        const bcrypt = require('bcryptjs');
+        const { email, password, setupKey } = req.body;
+
+        // Simple protection - require setup key
+        if (setupKey !== 'HOSTELHUB_SETUP_2024') {
+            return res.status(403).json({ error: 'Invalid setup key' });
+        }
+
+        // Check if admin already exists
+        const existingAdmin = await User.findOne({ role: 'admin' });
+        if (existingAdmin) {
+            return res.status(400).json({
+                error: 'Admin already exists',
+                email: existingAdmin.email
+            });
+        }
+
+        const adminEmail = email || 'admin@hostelhub.com';
+        const adminPassword = password || 'Admin123!';
+
+        // Check if user with this email exists
+        let adminUser = await User.findOne({ email: adminEmail });
+
+        if (adminUser) {
+            // Upgrade existing user to admin
+            adminUser.role = 'admin';
+            adminUser.verificationStatus = 'verified';
+            adminUser.emailVerified = true;
+            await adminUser.save();
+            return res.json({
+                message: 'Existing user upgraded to admin',
+                email: adminEmail
+            });
+        }
+
+        // Create new admin user
+        const hashedPassword = await bcrypt.hash(adminPassword, 12);
+        adminUser = new User({
+            username: 'Admin',
+            email: adminEmail,
+            password: hashedPassword,
+            role: 'admin',
+            firstName: 'Admin',
+            lastName: 'User',
+            emailVerified: true,
+            verificationStatus: 'verified',
+            trustScore: 100
+        });
+
+        await adminUser.save();
+
+        res.status(201).json({
+            message: 'Admin user created successfully',
+            email: adminEmail,
+            password: adminPassword,
+            note: 'Please change the password after first login'
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Auth Routes
 app.post('/api/auth/signup', async (req, res) => {
     try {
