@@ -29,6 +29,8 @@ import AppointmentDashboard from './components/AppointmentDashboard';
 import SmartSearch from './components/SmartSearch';
 import FraudDashboard from './components/FraudDashboard';
 import BookingForm from './components/BookingForm';
+import NotificationBadge from './components/NotificationBadge';
+import NotificationCenter from './components/NotificationCenter';
 
 // Module 3: AI-Based Search Components
 import SearchFilters from './components/SearchFilters';
@@ -69,6 +71,7 @@ const App: React.FC = () => {
   const [bookingHostel, setBookingHostel] = useState<Hostel | null>(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [sortOption, setSortOption] = useState('default');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -357,10 +360,10 @@ const App: React.FC = () => {
         const sanitizedData = {
           ...hostelData, // Spread all original fields first
           // Then override only the fields that need transformation
-          amenities: Array.isArray(hostelData.amenities)
-            ? hostelData.amenities
-            : typeof hostelData.amenities === 'string' && hostelData.amenities
-              ? hostelData.amenities.split(',').map(a => a.trim()).filter(a => a)
+          amenities: Array.isArray((hostelData as any).amenities)
+            ? (hostelData as any).amenities
+            : typeof (hostelData as any).amenities === 'string' && (hostelData as any).amenities
+              ? (hostelData as any).amenities.split(',').map((a: string) => a.trim()).filter((a: string) => a)
               : [],
           price: hostelData.price ? Number(hostelData.price) : hostelData.price,
           capacity: hostelData.capacity ? Number(hostelData.capacity) : hostelData.capacity
@@ -845,12 +848,19 @@ const App: React.FC = () => {
             <span className="text-base sm:text-lg md:text-xl font-bold text-gray-800 dark:text-white whitespace-nowrap">Hostel Hub</span>
           </div>
 
-          {/* Right: Placeholder for balance */}
-          <div className="w-10"></div>
+          {/* Right: Notification Badge */}
+          <div className="z-10">
+            <NotificationBadge onClick={() => setShowNotifications(true)} />
+          </div>
         </header>
 
         {renderCurrentView()}
       </main>
+
+      {/* Notification Center Modal */}
+      {showNotifications && (
+        <NotificationCenter onClose={() => setShowNotifications(false)} />
+      )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <PropertyListingForm

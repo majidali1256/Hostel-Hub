@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Building2, DollarSign, AlertTriangle, ArrowRight, Server, Database, Clock, Code } from 'lucide-react';
+import { Users, Building2, DollarSign, AlertTriangle, ArrowRight, Server, Database, Clock, Code, RefreshCw } from 'lucide-react';
 
 interface AdminDashboardProps {
     onNavigate: (page: string) => void;
@@ -8,6 +8,7 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         loadStats();
@@ -15,20 +16,61 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
 
     const loadStats = async () => {
         try {
+            setIsLoading(true);
+            setError(null);
             const token = localStorage.getItem('token');
+
+            if (!token) {
+                setError('No authentication token found. Please log in again.');
+                return;
+            }
+
             const res = await fetch('http://localhost:5001/api/admin/stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            if (!res.ok) {
+                if (res.status === 401) {
+                    setError('Session expired. Please log in again.');
+                } else if (res.status === 403) {
+                    setError('Access denied. Admin privileges required.');
+                } else {
+                    const errorData = await res.json().catch(() => ({ error: 'Failed to load data' }));
+                    setError(errorData.error || `Server error: ${res.status}`);
+                }
+                return;
+            }
+
             const data = await res.json();
             setStats(data);
         } catch (error) {
             console.error('Failed to load stats:', error);
+            setError('Failed to connect to server. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
     if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading dashboard...</div>;
+
+    if (error) {
+        return (
+            <div className="p-8 text-center">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md mx-auto">
+                    <AlertTriangle className="w-12 h-12 mx-auto text-red-500 mb-4" />
+                    <h3 className="text-lg font-bold text-red-800 dark:text-red-200 mb-2">Failed to Load Dashboard</h3>
+                    <p className="text-red-600 dark:text-red-300 mb-4">{error}</p>
+                    <button
+                        onClick={loadStats}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

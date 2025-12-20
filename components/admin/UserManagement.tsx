@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserX, UserCheck } from 'lucide-react';
+import { Search, UserX, UserCheck, RefreshCw, AlertTriangle } from 'lucide-react';
 
 const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('all');
 
@@ -13,7 +14,15 @@ const UserManagement: React.FC = () => {
 
     const loadUsers = async () => {
         try {
+            setIsLoading(true);
+            setError(null);
             const token = localStorage.getItem('token');
+
+            if (!token) {
+                setError('No authentication token found. Please log in again.');
+                return;
+            }
+
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (filter !== 'all') params.append('status', filter);
@@ -21,10 +30,23 @@ const UserManagement: React.FC = () => {
             const res = await fetch(`http://localhost:5001/api/admin/users?${params}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            if (!res.ok) {
+                if (res.status === 401) {
+                    setError('Session expired. Please log in again.');
+                } else if (res.status === 403) {
+                    setError('Access denied. Admin privileges required.');
+                } else {
+                    setError('Failed to load users. Please try again.');
+                }
+                return;
+            }
+
             const data = await res.json();
             setUsers(data.users || []);
         } catch (error) {
             console.error('Failed to load users:', error);
+            setError('Failed to connect to server. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -48,6 +70,23 @@ const UserManagement: React.FC = () => {
             console.error('Failed to perform action:', error);
         }
     };
+
+    if (error) {
+        return (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+                <AlertTriangle className="w-12 h-12 mx-auto text-red-500 mb-4" />
+                <h3 className="text-lg font-bold text-red-800 dark:text-red-200 mb-2">Failed to Load Users</h3>
+                <p className="text-red-600 dark:text-red-300 mb-4">{error}</p>
+                <button
+                    onClick={loadUsers}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    Try Again
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
