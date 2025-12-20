@@ -23,7 +23,7 @@ const RoommateMatchList: React.FC = () => {
 
     const loadMatches = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             console.log('Loading roommate matches with token:', token ? 'present' : 'missing');
             const res = await fetch('http://localhost:5001/api/roommate/matches', {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -51,7 +51,7 @@ const RoommateMatchList: React.FC = () => {
 
     const sendMatchRequest = async (userId: string) => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             await fetch(`http://localhost:5001/api/roommate/matches/${userId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }

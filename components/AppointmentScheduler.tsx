@@ -42,7 +42,7 @@ const AppointmentScheduler: React.FC<AppointmentSchedulerProps> = ({
         setIsLoading(true);
 
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:5001/api/appointments', {
                 method: 'POST',
                 headers: {

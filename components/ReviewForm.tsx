@@ -39,7 +39,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:5001/api/reviews', {
                 method: 'POST',
                 headers: {

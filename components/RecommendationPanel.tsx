@@ -27,7 +27,7 @@ const RecommendationPanel: React.FC<RecommendationPanelProps> = ({ userId, onSel
         setError(null);
 
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:5001/api/recommendations/personal', {
                 method: 'POST',
                 headers: {

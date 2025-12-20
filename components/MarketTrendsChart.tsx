@@ -34,7 +34,7 @@ const MarketTrendsChart: React.FC<MarketTrendsChartProps> = ({ location }) => {
 
     const loadTrends = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:5001/api/price/market/${encodeURIComponent(location)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -52,7 +52,7 @@ const MarketTrendsChart: React.FC<MarketTrendsChartProps> = ({ location }) => {
 
     const loadForecast = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:5001/api/price/forecast/${encodeURIComponent(location)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });

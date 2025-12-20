@@ -29,7 +29,7 @@ const PropertyListingForm: React.FC<PropertyListingFormProps> = ({ onSubmit, onC
     const [amenities, setAmenities] = useState('');
     const [roomCategory, setRoomCategory] = useState('Shared Room');
     const [genderPreference, setGenderPreference] = useState<HostelCategory>('any');
-    const [verified, setVerified] = useState(false);
+
 
     const [images, setImages] = useState<MediaItem[]>([]);
     const [videos, setVideos] = useState<MediaItem[]>([]);
@@ -47,7 +47,7 @@ const PropertyListingForm: React.FC<PropertyListingFormProps> = ({ onSubmit, onC
             setAmenities(initialData.amenities.join(', '));
             setRoomCategory(initialData.category || 'Shared Room');
             setGenderPreference((initialData as any).genderPreference || 'any');
-            setVerified(initialData.verified);
+
 
             setImages(initialData.images.map(url => ({ preview: url })));
             setVideos(initialData.videos?.map(url => ({ preview: url })) || []);
@@ -61,7 +61,7 @@ const PropertyListingForm: React.FC<PropertyListingFormProps> = ({ onSubmit, onC
             setAmenities('');
             setRoomCategory('Shared Room');
             setGenderPreference('any');
-            setVerified(false);
+
             setImages([]);
             setVideos([]);
             setTour360([]);
@@ -123,7 +123,7 @@ const PropertyListingForm: React.FC<PropertyListingFormProps> = ({ onSubmit, onC
         formData.append('description', description);
         formData.append('category', roomCategory);
         formData.append('genderPreference', genderPreference);
-        formData.append('verified', String(verified));
+
 
         // Amenities
         const amenitiesList = amenities.split(',').map(a => a.trim()).filter(a => a);
@@ -315,10 +315,7 @@ const PropertyListingForm: React.FC<PropertyListingFormProps> = ({ onSubmit, onC
                 </div>
             </div>
 
-            <div className="flex items-center">
-                <input id="verified" type="checkbox" checked={verified} onChange={e => setVerified(e.target.checked)} className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500" />
-                <label htmlFor="verified" className="ml-2 block text-sm text-gray-900 dark:text-gray-200">Mark as Verified</label>
-            </div>
+
 
             <div className="flex justify-end gap-4 pt-4">
                 <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>

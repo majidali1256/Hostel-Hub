@@ -37,7 +37,7 @@ const PriceRecommendation: React.FC<PriceRecommendationProps> = ({ hostelId, onP
 
     const loadAnalysis = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:5001/api/price/analysis/${hostelId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -60,7 +60,7 @@ const PriceRecommendation: React.FC<PriceRecommendationProps> = ({ hostelId, onP
     const runAnalysis = async () => {
         setIsRunningAnalysis(true);
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:5001/api/price/analysis/${hostelId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }

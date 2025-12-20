@@ -169,11 +169,11 @@ trustScoreSchema.methods.assignBadges = function () {
 
 // Static method to update trust score for a user
 trustScoreSchema.statics.updateForUser = async function (userId) {
-    const User = mongoose.model('User');
-    const Booking = mongoose.model('Booking');
-    const Review = mongoose.model('Review');
-    const Verification = mongoose.model('Verification');
-    const FraudReport = mongoose.model('FraudReport');
+    const User = mongoose.models.User || require('./User');
+    const Booking = mongoose.models.Booking || require('./Booking');
+    const Review = mongoose.models.Review || require('./Review');
+    const Verification = mongoose.models.Verification || require('./Verification');
+    const FraudReport = mongoose.models.FraudReport || require('./FraudReport');
 
     let trustScore = await this.findOne({ userId });
     if (!trustScore) {
@@ -269,7 +269,7 @@ trustScoreSchema.statics.updateForUser = async function (userId) {
 
 // Helper function to get hostel IDs for a user
 async function getHostelIds(userId) {
-    const Hostel = mongoose.model('Hostel');
+    const Hostel = mongoose.models.Hostel || require('./Hostel');
     const hostels = await Hostel.find({ ownerId: userId }).select('_id');
     return hostels.map(h => h._id);
 }

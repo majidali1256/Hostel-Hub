@@ -4,7 +4,7 @@ import { X, Calendar, User, Phone, CreditCard, CheckCircle, XCircle, Eye, Loader
 import CancellationModal from './CancellationModal';
 
 interface Booking {
-    id: string;
+    _id: string;
     hostelId: {
         name: string;
         location: string;
@@ -95,6 +95,27 @@ const BookingVerificationDashboard: React.FC = () => {
         }
     };
 
+    const handleAcceptBooking = async (bookingId: string) => {
+        setProcessingId(bookingId);
+        try {
+            const token = localStorage.getItem('token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            await axios.post(
+                `${apiUrl}/api/bookings/${bookingId}/confirm`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Refresh bookings
+            await fetchBookings();
+            alert('Booking accepted successfully!');
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Failed to accept booking');
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     const handleCancelBooking = async (reason: string) => {
         if (!selectedBooking) return;
 
@@ -103,7 +124,7 @@ const BookingVerificationDashboard: React.FC = () => {
             const token = localStorage.getItem('token');
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
             await axios.post(
-                `${apiUrl}/api/bookings/${selectedBooking.id}/cancel`,
+                `${apiUrl}/api/bookings/${selectedBooking._id}/cancel`,
                 { reason },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -125,7 +146,10 @@ const BookingVerificationDashboard: React.FC = () => {
     const awaitingPaymentBookings = bookings.filter(b => b.paymentStatus === 'pending' && b.status !== 'cancelled');
     // Bookings with payment submitted, awaiting owner verification
     const pendingBookings = bookings.filter(b => b.paymentStatus === 'submitted' && b.status !== 'cancelled');
-    const confirmedBookings = bookings.filter(b => b.paymentStatus === 'verified' && b.status !== 'cancelled');
+    // Paid bookings awaiting owner acceptance
+    const paidPendingAcceptance = bookings.filter(b => b.paymentStatus === 'verified' && b.status === 'pending');
+    // Fully confirmed bookings
+    const confirmedBookings = bookings.filter(b => b.paymentStatus === 'verified' && b.status === 'confirmed');
     const rejectedBookings = bookings.filter(b => b.paymentStatus === 'rejected');
 
     const formatDate = (dateString: string) => {
@@ -179,7 +203,7 @@ const BookingVerificationDashboard: React.FC = () => {
                     </h2>
                     <div className="grid gap-4">
                         {awaitingPaymentBookings.map(booking => (
-                            <div key={booking.id} className="bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-4 md:p-6 shadow-sm">
+                            <div key={booking._id} className="bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-4 md:p-6 shadow-sm">
                                 <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                                     <div>
                                         <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">{booking.hostelId.name}</h3>
@@ -241,7 +265,7 @@ const BookingVerificationDashboard: React.FC = () => {
                 ) : (
                     <div className="grid gap-4">
                         {pendingBookings.map(booking => (
-                            <div key={booking.id} className="bg-white dark:bg-gray-800 border-2 border-orange-200 dark:border-orange-700 rounded-lg p-4 md:p-6 shadow-sm">
+                            <div key={booking._id} className="bg-white dark:bg-gray-800 border-2 border-orange-200 dark:border-orange-700 rounded-lg p-4 md:p-6 shadow-sm">
                                 <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4 gap-4">
                                     <div>
                                         <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">{booking.hostelId.name}</h3>
@@ -289,8 +313,8 @@ const BookingVerificationDashboard: React.FC = () => {
                                         <Eye className="w-4 h-4" /> View Receipt
                                     </button>
                                     <button
-                                        onClick={() => handleVerifyPayment(booking.id, true)}
-                                        disabled={processingId === booking.id}
+                                        onClick={() => handleVerifyPayment(booking._id, true)}
+                                        disabled={processingId === booking._id}
                                         className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
                                     >
                                         <CheckCircle className="w-4 h-4" /> Approve
@@ -322,6 +346,72 @@ const BookingVerificationDashboard: React.FC = () => {
                 )}
             </div>
 
+            {/* Paid - Awaiting Acceptance */}
+            {paidPendingAcceptance.length > 0 && (
+                <div className="mb-8">
+                    <h2 className="text-xl md:text-2xl font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+                        💰 Paid - Awaiting Acceptance
+                        <span className="bg-purple-500 text-white text-sm px-3 py-1 rounded-full">
+                            {paidPendingAcceptance.length}
+                        </span>
+                    </h2>
+                    <div className="grid gap-4">
+                        {paidPendingAcceptance.map(booking => (
+                            <div key={booking._id} className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-lg p-4 md:p-6 shadow-sm">
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                                    <div>
+                                        <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">{booking.hostelId.name}</h3>
+                                        <p className="text-gray-600 dark:text-gray-400">{booking.hostelId.location}</p>
+                                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400">
+                                            <div className="flex items-center gap-2">
+                                                <User className="w-4 h-4" />
+                                                <span>{booking.customerId.firstName} {booking.customerId.lastName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Phone className="w-4 h-4" />
+                                                <span>{booking.customerId.contactNumber || 'No phone'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4" />
+                                                <span>{formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="md:text-right">
+                                        <div className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">
+                                            PKR {booking.totalPrice.toLocaleString()}
+                                        </div>
+                                        <div className="text-sm text-purple-600 dark:text-purple-400 mt-1 flex items-center gap-1 md:justify-end">
+                                            <CheckCircle className="w-4 h-4" /> Payment Verified
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                                    <button
+                                        onClick={() => handleAcceptBooking(booking._id)}
+                                        disabled={processingId === booking._id}
+                                        className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        <CheckCircle className="w-5 h-5" />
+                                        {processingId === booking._id ? 'Processing...' : 'Accept Booking'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedBooking(booking);
+                                            setShowCancelModal(true);
+                                        }}
+                                        className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg transition-colors"
+                                    >
+                                        <XCircle className="w-5 h-5" />
+                                        Reject Booking
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Confirmed Bookings */}
             <div className="mb-8">
                 <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
@@ -334,7 +424,7 @@ const BookingVerificationDashboard: React.FC = () => {
                 ) : (
                     <div className="grid gap-4">
                         {confirmedBookings.map(booking => (
-                            <div key={booking.id} className="bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                            <div key={booking._id} className="bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-lg p-4">
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                     <div>
                                         <h3 className="font-semibold text-gray-900 dark:text-white">{booking.hostelId.name}</h3>
@@ -418,20 +508,20 @@ const BookingVerificationDashboard: React.FC = () => {
 
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <button
-                                    onClick={() => handleVerifyPayment(selectedBooking.id, true)}
-                                    disabled={processingId === selectedBooking.id}
+                                    onClick={() => handleVerifyPayment(selectedBooking._id, true)}
+                                    disabled={processingId === selectedBooking._id}
                                     className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors disabled:opacity-50"
                                 >
                                     <CheckCircle className="w-5 h-5" />
-                                    {processingId === selectedBooking.id ? 'Processing...' : 'Approve Payment'}
+                                    {processingId === selectedBooking._id ? 'Processing...' : 'Approve Payment'}
                                 </button>
                                 <button
-                                    onClick={() => handleVerifyPayment(selectedBooking.id, false)}
-                                    disabled={processingId === selectedBooking.id || !rejectionReason}
+                                    onClick={() => handleVerifyPayment(selectedBooking._id, false)}
+                                    disabled={processingId === selectedBooking._id || !rejectionReason}
                                     className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg transition-colors disabled:opacity-50"
                                 >
                                     <XCircle className="w-5 h-5" />
-                                    {processingId === selectedBooking.id ? 'Processing...' : 'Reject Payment'}
+                                    {processingId === selectedBooking._id ? 'Processing...' : 'Reject Payment'}
                                 </button>
                             </div>
                         </div>

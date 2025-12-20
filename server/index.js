@@ -238,7 +238,7 @@ app.get('/api/auth/verify-email/:token', async (req, res) => {
     }
 });
 
-// Request password reset
+// Request password reset - sends 6-digit code
 app.post('/api/auth/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -248,28 +248,92 @@ app.post('/api/auth/forgot-password', async (req, res) => {
             return res.status(404).json({ error: 'No account found with this email address' });
         }
 
-        // Generate reset token
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        user.resetPasswordToken = resetToken;
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+        // Generate 6-digit reset code
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetPasswordToken = resetCode;
+        user.resetPasswordExpires = Date.now() + 600000; // 10 minutes
         await user.save();
 
-        // Send reset email
+        // Log the code for dev mode
+        console.log('=================================================');
+        console.log(`PASSWORD RESET CODE for ${email}: ${resetCode}`);
+        console.log('=================================================');
+
+        // Send reset email with code
         try {
             if (process.env.EMAIL_USER) {
-                await sendPasswordResetEmail(email, resetToken);
+                // Use existing email function or send code directly
+                const nodemailer = require('nodemailer');
+                const transporter = nodemailer.createTransport({
+                    service: process.env.EMAIL_SERVICE || 'gmail',
+                    auth: {
+                        user: process.env.EMAIL_USER,
+                        pass: process.env.EMAIL_PASSWORD
+                    }
+                });
+                await transporter.sendMail({
+                    from: process.env.EMAIL_USER,
+                    to: email,
+                    subject: 'Password Reset Code - Hostel Hub',
+                    html: `<h1>Password Reset</h1><p>Your password reset code is: <strong>${resetCode}</strong></p><p>This code expires in 10 minutes.</p>`
+                });
             }
         } catch (emailError) {
             console.error('Failed to send password reset email:', emailError);
         }
 
-        res.json({ message: 'If the email exists, a reset link has been sent' });
+        res.json({ message: 'Reset code sent to your email', codeSent: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Reset password
+// Verify reset code
+app.post('/api/auth/verify-reset-code', async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        const user = await User.findOne({
+            email,
+            resetPasswordToken: code,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid or expired code' });
+        }
+
+        res.json({ valid: true, message: 'Code verified' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Reset password with code
+app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+        const { email, code, password } = req.body;
+        const user = await User.findOne({
+            email,
+            resetPasswordToken: code,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid or expired code' });
+        }
+
+        user.password = password; // Will be hashed by pre-save hook
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Keep old token-based endpoint for backwards compatibility
 app.post('/api/auth/reset-password/:token', async (req, res) => {
     try {
         const { password } = req.body;
@@ -544,6 +608,9 @@ app.post('/api/hostels', authMiddleware, roleMiddleware('owner', 'admin'), hoste
     try {
         const hostelData = { ...req.body };
 
+        // Security: Prevent users from self-verifying
+        hostelData.verified = false;
+
         // Handle media uploads
         if (req.files) {
             if (req.files.images) {
@@ -653,7 +720,10 @@ app.put('/api/hostels/:id', authMiddleware, hostelUpload, async (req, res) => {
         if (updateData.category) hostel.category = updateData.category;
         if (updateData.status) hostel.status = updateData.status;
         if (updateData.genderPreference) hostel.genderPreference = updateData.genderPreference;
-        if (updateData.verified !== undefined) hostel.verified = updateData.verified === 'true' || updateData.verified === true;
+        // Security: Only admins can change verified status manually
+        if (user.role === 'admin' && updateData.verified !== undefined) {
+            hostel.verified = updateData.verified === 'true' || updateData.verified === true;
+        }
 
         if (updateData.amenities) {
             if (typeof updateData.amenities === 'string') {
@@ -3970,7 +4040,7 @@ app.put('/api/bookings/:id/verify-payment', authMiddleware, async (req, res) => 
 
         // Check authorization (Owner only)
         const hostel = await Hostel.findById(booking.hostelId);
-        if (hostel.ownerId !== req.userId) {
+        if (hostel.ownerId.toString() !== req.userId) {
             return res.status(403).json({ error: 'Not authorized to verify this payment' });
         }
 

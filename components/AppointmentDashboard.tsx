@@ -32,7 +32,7 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
     const loadAppointments = async () => {
         try {
             setIsLoading(true);
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const endpoint = userRole === 'owner'
                 ? 'http://localhost:5001/api/appointments?role=owner'
                 : 'http://localhost:5001/api/appointments';
@@ -56,7 +56,7 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
 
     const handleConfirm = async (appointmentId: string) => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:5001/api/appointments/${appointmentId}`, {
                 method: 'PATCH',
                 headers: {
@@ -78,7 +78,7 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
     const handleCancel = async (appointmentId: string) => {
         const reason = prompt('Reason for cancellation (optional):');
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:5001/api/appointments/${appointmentId}`, {
                 method: 'PATCH',
                 headers: {

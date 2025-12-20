@@ -1,501 +1,576 @@
 import React, { useState } from 'react';
-import Button from './Button';
-import Input from './Input';
-import { User } from '../types';
 import { api } from '../services/mongoService';
-import axios from 'axios';
 
 interface LoginProps {
-  onSignUpSubmit: (uid: string, userData: Omit<User, 'id' | 'role'>) => void;
-  onLoginSuccess?: (user: User) => void;
+    onLoginSuccess: (user: any) => void;
+    onSignUpSubmit: (uid: string, userData: any) => void;
 }
 
-const GoogleIcon = () => (
-  <svg className="h-5 w-5" viewBox="0 0 48 48" aria-hidden="true">
-    <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039L38.804 9.692C34.522 5.834 29.632 3.5 24 3.5 11.737 3.5 1.5 13.737 1.5 26S11.737 48.5 24 48.5c12.263 0 22.5-9.715 22.5-22.5 0-1.341-.138-2.65-.389-3.917z" />
-    <path fill="#FF3D00" d="M6.306 14.691L12.543 19.92c1.438-2.42 3.86-4.131 6.691-4.634V3.5H6.306z" />
-    <path fill="#4CAF50" d="M24 48.5c5.632 0 10.522-2.334 14.191-6.192l-6.236-5.228c-1.895 1.229-4.27 1.92-6.955 1.92-5.22 0-9.657-3.342-11.249-7.87l-6.522 5.028C6.386 42.112 14.46 48.5 24 48.5z" />
-    <path fill="#1976D2" d="M43.611 20.083H24v8h11.303c-.792 2.237-2.231 4.16-4.082 5.565L38.804 39.5c4.185-3.856 6.691-9.338 6.691-15.583 0-1.341-.138-2.65-.389-3.917z" />
-  </svg>
-);
-const FacebookIcon = () => (
-  <svg className="h-6 w-6" fill="#1877F2" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M22.675 0h-21.35C.582 0 0 .582 0 1.325v21.351C0 23.418.582 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.742 0 1.325-.582 1.325-1.325V1.325C24 .582 23.418 0 22.675 0z" />
-  </svg>
-);
-const AppleIcon = () => (
-  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12.152,5.882c-0.34-0.843-0.938-1.343-1.688-1.343c-1.049,0-1.948,0.765-2.588,1.915c-1.428,2.602-0.816,6.343,1.218,8.22c0.509,0.469,1.045,0.729,1.644,0.729c0.119,0,0.24-0.01,0.358-0.031c0.826-0.156,1.488-0.656,1.888-1.329c-1.319-0.813-2.158-2.251-2.158-3.856c0-2.016,1.238-3.6,2.948-4.228C13.292,6.01,12.592,5.882,12.152,5.882z M15.118,2.029C14.268,2.01,12.7,2.58,11.7,3.689C10.7,2.58,9.2,2.01,8.35,2.029c-2.3,0.01-4.35,1.881-5.35,4.352C1.65,10.042,2.8,14.653,5.45,17.47c1.4,1.499,3.1,2.25,4.8,2.25c0.1,0,0.2,0,0.3,0c1.7-0.063,3.3-0.8,4.5-1.9c1.4-1.2,2.3-2.8,2.6-4.5c0.3-1.8-0.2-3.6-1.2-5.1C18.618,3.91,17.418,2.049,15.118,2.029z"></path>
-  </svg>
-);
+const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpSubmit }) => {
+    const [isSignUp, setIsSignUp] = useState(false);
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
-const Login: React.FC<LoginProps> = ({ onSignUpSubmit, onLoginSuccess }) => {
-  const [view, setView] = useState<'login' | 'signup' | 'forgotPassword' | 'resetPassword'>('login');
+    // Login form state
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
 
-  const [username, setUsername] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [contactNumber, setContactNumber] = useState('');
-  const [role, setRole] = useState<'owner' | 'customer'>('customer');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+    // Signup form state
+    const [signupData, setSignupData] = useState({
+        firstName: '',
+        lastName: '',
+        username: '',
+        email: '',
+        phone: '',
+        password: '',
+        confirmPassword: '',
+    });
 
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [resetToken, setResetToken] = useState('');
+    // Forgot password state
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotStep, setForgotStep] = useState<'email' | 'code' | 'password'>('email');
+    const [resetCode, setResetCode] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
-  // Reset state when switching views
-  React.useEffect(() => {
-    setError(null);
-    setMessage(null);
-    setIsLoading(false);
-    setUsername('');
-    setFirstName('');
-    setLastName('');
-    setContactNumber('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-  }, [view]);
+    // Step 1: Send reset code to email
+    const handleSendCode = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccessMessage('');
+        setIsLoading(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setMessage(null);
-    setIsLoading(true);
-
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
-      if (view === 'login') {
-        // Real backend login
-        console.log('Login: Sending login request...');
-        const response = await axios.post(`${apiUrl}/api/auth/login`, {
-          email: email.trim(),
-          password
-        });
-        console.log('Login: Response received', response.data);
-
-        const { accessToken, refreshToken, user } = response.data;
-
-        // Store tokens in localStorage
-        localStorage.setItem('token', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('userId', user._id || user.id);
-
-        // Call parent callback with user data
-        if (onLoginSuccess) {
-          console.log('Login: Calling onLoginSuccess');
-          onLoginSuccess({
-            id: user._id || user.id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            contactNumber: user.contactNumber || '',
-            role: user.role,
-            stayHistory: user.stayHistory || [],
-            profilePicture: user.profilePicture
-          });
+        try {
+            await api.auth.forgotPassword(forgotEmail);
+            setSuccessMessage('A 6-digit code has been sent to your email.');
+            setForgotStep('code');
+        } catch (err: any) {
+            setError(err.message || 'Failed to send reset code');
+        } finally {
+            setIsLoading(false);
         }
-      } else if (view === 'signup') {
-        if (password !== confirmPassword) {
-          throw new Error("Passwords do not match.");
+    };
+
+    // Step 2: Verify the code
+    const handleVerifyCode = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccessMessage('');
+        setIsLoading(true);
+
+        try {
+            await api.auth.verifyResetCode(forgotEmail, resetCode);
+            setSuccessMessage('Code verified! Enter your new password.');
+            setForgotStep('password');
+        } catch (err: any) {
+            setError(err.message || 'Invalid or expired code');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Step 3: Reset password with code
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccessMessage('');
+
+        if (newPassword !== confirmNewPassword) {
+            setError('Passwords do not match');
+            return;
         }
 
-        const hasUpperCase = /[A-Z]/.test(password);
-        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-        if (!hasUpperCase || !hasSpecialChar) {
-          throw new Error("Password must contain at least one capital letter and one special character.");
+        if (newPassword.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
         }
 
-        // Real backend signup
-        const signupResponse = await axios.post(`${apiUrl}/api/auth/signup`, {
-          email: email.trim(),
-          password,
-          username: username.trim(),
-          firstName,
-          lastName,
-          contactNumber,
-          role
-        });
+        setIsLoading(true);
 
-        console.log("Signup successful:", signupResponse.data);
-
-        // Auto-login after successful signup
-        const loginResponse = await axios.post(`${apiUrl}/api/auth/login`, {
-          email: email.trim(),
-          password
-        });
-
-        const { accessToken, refreshToken, user } = loginResponse.data;
-
-        // Store tokens in localStorage
-        localStorage.setItem('token', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('userId', user._id || user.id);
-
-        // Call parent callback with user data
-        if (onLoginSuccess) {
-          onLoginSuccess({
-            id: user._id || user.id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            contactNumber: user.contactNumber || '',
-            role: user.role,
-            stayHistory: user.stayHistory || [],
-            profilePicture: user.profilePicture
-          });
+        try {
+            await api.auth.resetPasswordWithCode(forgotEmail, resetCode, newPassword);
+            setSuccessMessage('Password reset successfully! You can now log in.');
+            // Reset all state and go back to login
+            setTimeout(() => {
+                setIsForgotPassword(false);
+                setForgotStep('email');
+                setForgotEmail('');
+                setResetCode('');
+                setNewPassword('');
+                setConfirmNewPassword('');
+                setSuccessMessage('');
+            }, 2000);
+        } catch (err: any) {
+            setError(err.message || 'Failed to reset password');
+        } finally {
+            setIsLoading(false);
         }
-      } else if (view === 'forgotPassword') {
-        // Call forgot password API
-        await api.auth.forgotPassword(email);
-        setMessage(`A password reset code has been sent to ${email}. Please check your email and enter the code below.`);
-        setView('resetPassword');
-      } else if (view === 'resetPassword') {
-        // Reset password with token
-        if (password !== confirmPassword) {
-          throw new Error("Passwords do not match.");
+    };
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setIsLoading(true);
+
+        try {
+            const user = await api.auth.login(loginEmail, loginPassword);
+            if (user) {
+                onLoginSuccess(user);
+            }
+        } catch (err: any) {
+            setError('Wrong Email or Password');
+        } finally {
+            setIsLoading(false);
         }
-        await api.auth.resetPassword(resetToken, password);
-        setMessage('Password reset successfully! Please log in with your new password.');
-        setView('login');
-      }
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || 'An error occurred';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  const handleSocialLogin = (provider: 'google' | 'facebook' | 'apple') => {
-    setError(null);
-    setMessage(null);
-    setIsLoading(true);
+    const handleSignUp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
 
-    const backendUrl = 'http://localhost:5001'; // Should be env var in production
+        if (signupData.password !== signupData.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
 
-    if (provider === 'google') {
-      window.location.href = `${backendUrl}/api/auth/google`;
-    } else if (provider === 'facebook') {
-      window.location.href = `${backendUrl}/api/auth/facebook`;
-    } else {
-      alert("Apple login not implemented yet.");
-      setIsLoading(false);
-    }
-  };
+        if (signupData.password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
 
-  const renderTitle = () => {
-    switch (view) {
-      case 'login': return 'Welcome to Hostel Hub';
-      case 'signup': return 'Create an Account';
-      case 'forgotPassword': return 'Reset Your Password';
-      case 'resetPassword': return 'Enter Reset Code';
-    }
-  };
+        setIsLoading(true);
 
-  const renderSubtitle = () => {
-    switch (view) {
-      case 'login': return 'Sign in to find your ideal stay.';
-      case 'signup': return 'Get started by creating your account.';
-      case 'forgotPassword': return 'Enter your email to receive a password reset code.';
-      case 'resetPassword': return 'Enter the code from your email and your new password.';
-    }
-  };
+        try {
+            const result = await api.auth.signup(
+                signupData.email,
+                signupData.password,
+                { username: signupData.username }
+            );
 
-  const renderSocialButtons = () => (
-    <>
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-white dark:bg-gray-800 px-2 text-gray-500 dark:text-gray-400">Or continue with</span>
-        </div>
-      </div>
+            if (result.user) {
+                onSignUpSubmit(result.user.id, {
+                    firstName: signupData.firstName,
+                    lastName: signupData.lastName,
+                    username: signupData.username,
+                    email: signupData.email,
+                    phone: signupData.phone,
+                });
+            }
+        } catch (err: any) {
+            setError(err.message || 'Signup failed. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-      <div className="space-y-3">
-        <Button type="button" variant="secondary" fullWidth className="!font-semibold !bg-white dark:!bg-gray-700 !text-gray-600 dark:!text-gray-200 border border-gray-300 dark:border-gray-600 hover:!bg-gray-50 dark:hover:!bg-gray-600 flex items-center justify-center gap-3" onClick={() => handleSocialLogin('google')}>
-          <GoogleIcon />
-          <span>Continue with Google</span>
-        </Button>
-        <Button type="button" variant="secondary" fullWidth className="!font-semibold !bg-white dark:!bg-gray-700 !text-gray-600 dark:!text-gray-200 border border-gray-300 dark:border-gray-600 hover:!bg-gray-50 dark:hover:!bg-gray-600 flex items-center justify-center gap-3" onClick={() => handleSocialLogin('facebook')}>
-          <FacebookIcon />
-          <span>Continue with Facebook</span>
-        </Button>
-      </div>
-    </>
-  );
+    const handleGoogleLogin = async () => {
+        // Google OAuth - redirect to backend OAuth endpoint
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        window.location.href = `${apiUrl}/api/auth/google`;
+    };
 
-  const renderFormContent = () => {
-    switch (view) {
-      case 'resetPassword':
-        return (
-          <>
-            <Input
-              id="resetToken"
-              label="Reset Code"
-              type="text"
-              value={resetToken}
-              onChange={(e) => setResetToken(e.target.value)}
-              placeholder="Enter the code from your email"
-              required
 
-            />
-            <Input
-              id="password"
-              label="New Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
+    return (
+        <div className="h-screen flex overflow-hidden bg-white dark:bg-[#0a0a0a] transition-colors duration-500 font-sans">
+            {/* Left Side - Branding Panel (60% width) - Pure White */}
+            <div className="hidden lg:flex lg:w-[60%] relative overflow-hidden bg-white dark:bg-[#0a0a0a]">
+                {/* Content Container - Centered */}
+                <div className="relative z-10 flex flex-col justify-center items-center w-full h-full p-16">
+                    {/* Large Hero Icon */}
+                    <div className="mb-8 flex flex-col items-center group cursor-default">
+                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-10 rounded-[2.5rem] shadow-2xl shadow-blue-500/25 dark:shadow-blue-500/40 transition-all duration-500 group-hover:scale-105 group-hover:shadow-blue-500/40 group-hover:-translate-y-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-28 w-28 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                        </div>
+                        <h1 className="mt-8 text-5xl font-extrabold tracking-tight text-blue-600 dark:text-blue-500">
+                            HostelHub
+                        </h1>
+                        <p className="mt-4 text-xl text-gray-500 dark:text-gray-400 font-light tracking-wide">
+                            Home, away from Home.
+                        </p>
+                    </div>
 
-            />
-            <Input
-              id="confirmPassword"
-              label="Confirm New Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-
-            />
-            <Button type="submit" fullWidth disabled={isLoading} >
-              {isLoading ? 'Resetting...' : 'Reset Password'}
-            </Button>
-          </>
-        );
-      case 'forgotPassword':
-        return (
-          <>
-            <Input
-              id="email"
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-
-            />
-            <Button type="submit" fullWidth disabled={isLoading} >
-              {isLoading ? 'Sending...' : 'Send Reset Code'}
-            </Button>
-          </>
-        );
-      case 'signup':
-        return (
-          <>
-            <Input
-              id="username"
-              label="Username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g., majidali22"
-              required
-
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                id="firstName"
-                label="First Name"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Majid"
-                required
-
-              />
-              <Input
-                id="lastName"
-                label="Last Name"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Ali"
-                required
-
-              />
-            </div>
-            <Input
-              id="email"
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-
-            />
-            <Input
-              id="contactNumber"
-              label="Contact Number"
-              type="tel"
-              value={contactNumber}
-              onChange={(e) => setContactNumber(e.target.value)}
-              placeholder="0300-1234567"
-              required
-
-            />
-
-            <div className="space-y-2">
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                I am a
-              </label>
-              <select
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value as 'owner' | 'customer')}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="customer">Customer (Looking for hostels)</option>
-                <option value="owner">Owner (Listing hostels)</option>
-              </select>
-            </div>
-
-            <Input
-              id="password"
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4 pl-1">Must contain at least one capital letter and one special character.</p>
-            <Input
-              id="confirmPassword"
-              label="Confirm Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-
-            />
-            <Button type="submit" fullWidth disabled={isLoading} >
-              {isLoading ? 'Creating Account...' : 'Sign Up'}
-            </Button>
-            {renderSocialButtons()}
-          </>
-        );
-      case 'login':
-      default:
-        return (
-          <>
-            <Input
-              id="email"
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-
-            />
-            <Input
-              id="password"
-              label={
-                <div className="flex justify-between items-center">
-                  <span>Password</span>
-                  <a href="#" onClick={(e) => { e.preventDefault(); setView('forgotPassword'); }} className="text-sm font-medium text-blue-600 hover:text-blue-500">
-                    Forgot Password?
-                  </a>
+                    {/* Minimalist Feature Tags */}
+                    <div className="flex flex-wrap justify-center gap-4 mt-10">
+                        {[
+                            { title: 'Home For Students', icon: 'M12 14l9-5-9-5-9 5 9 5z' },
+                            { title: 'Verified Listing', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+                            { title: 'Instant Booking', icon: 'M13 10V3L4 14h7v7l9-11h-7z' }
+                        ].map((feature, idx) => (
+                            <div key={idx} className="flex items-center gap-3 px-5 py-3 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-default group">
+                                <div className="p-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={feature.icon} />
+                                    </svg>
+                                </div>
+                                <span className="font-medium text-gray-700 dark:text-gray-200 text-sm">{feature.title}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-              }
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-
-            />
-            <Button type="submit" fullWidth disabled={isLoading} >
-              {isLoading ? 'Logging In...' : 'Login'}
-            </Button>
-
-            {renderSocialButtons()}
-          </>
-        );
-    }
-  }
-
-  const renderFooterLink = () => {
-    switch (view) {
-      case 'forgotPassword':
-        return (
-          <p className="text-gray-500 dark:text-gray-400">
-            Remember your password?{' '}
-            <a href="#" className="font-medium text-blue-600 hover:text-blue-500" onClick={(e) => { e.preventDefault(); setView('login'); }}>
-              Back to Login
-            </a>
-          </p>
-        );
-      case 'signup':
-        return (
-          <p className="text-gray-500 dark:text-gray-400">
-            Already have an account?{' '}
-            <a href="#" className="font-medium text-blue-600 hover:text-blue-500" onClick={(e) => { e.preventDefault(); setView('login'); }}>
-              Login
-            </a>
-          </p>
-        );
-      case 'login':
-      default:
-        return (
-          <p className="text-gray-500 dark:text-gray-400">
-            Don't have an account?{' '}
-            <a href="#" className="font-medium text-blue-600 hover:text-blue-500" onClick={(e) => { e.preventDefault(); setView('signup'); }}>
-              Sign up
-            </a>
-          </p>
-        );
-    }
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6 border border-gray-200 dark:border-gray-700">
-        <div className="text-center">
-          <div className="inline-block bg-blue-100 dark:bg-blue-900/50 p-3 rounded-full mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            {renderTitle()}
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">
-            {renderSubtitle()}
-          </p>
-        </div>
-        <form className="space-y-6" onSubmit={handleSubmit}>
-
-          {error && <p className="text-red-500 dark:text-red-400 text-sm font-semibold text-center bg-red-50 dark:bg-red-900/30 p-3 rounded-md">{error}</p>}
-          {message && <p className="text-green-600 dark:text-green-400 text-sm font-semibold text-center bg-green-50 dark:bg-green-900/30 p-3 rounded-md">{message}</p>}
-
-          {renderFormContent()}
-
-          <div className="text-sm text-center">
-            {renderFooterLink()}
-            <div className="text-xs text-gray-400 dark:text-gray-500 mt-4">
-              <p>© 2025 Hostel Hub. All rights reserved.</p>
             </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+
+            {/* Right Side - Login Form (40% width) */}
+            <div className="w-full lg:w-[40%] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative bg-gray-50 dark:bg-[#0a0a0a] overflow-hidden">
+                {/* Elevated Card Container */}
+                <div className="w-full max-w-[400px] bg-white dark:bg-gray-900 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-black/50 p-5 sm:p-6 border border-gray-100 dark:border-gray-800">
+                    {/* Mobile Logo */}
+                    <div className="lg:hidden flex flex-col items-center mb-4">
+                        <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/30 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold text-blue-600 dark:text-blue-500">HostelHub</h2>
+                    </div>
+
+                    {/* Tab Switcher */}
+                    <div className="flex p-1 mb-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800">
+                        <button
+                            onClick={() => { setIsSignUp(false); setError(''); }}
+                            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${!isSignUp
+                                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-100 dark:ring-gray-700'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                }`}
+                        >
+                            Log In
+                        </button>
+                        <button
+                            onClick={() => { setIsSignUp(true); setError(''); }}
+                            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${isSignUp
+                                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-100 dark:ring-gray-700'
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                }`}
+                        >
+                            Sign Up
+                        </button>
+                    </div>
+
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mb-3 p-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-medium animate-fade-in flex items-center gap-2">
+                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            {error}
+                        </div>
+                    )}
+
+                    {/* Success Message */}
+                    {successMessage && (
+                        <div className="mb-3 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 text-green-600 dark:text-green-400 text-xs font-medium animate-fade-in flex items-center gap-2">
+                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            {successMessage}
+                        </div>
+                    )}
+
+                    {/* Forms - Minimalist Inputs */}
+                    {isForgotPassword ? (
+                        <div className="space-y-4">
+                            {/* Step indicator */}
+                            <div className="flex justify-center gap-2 mb-4">
+                                <div className={`w-2 h-2 rounded-full ${forgotStep === 'email' ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                                <div className={`w-2 h-2 rounded-full ${forgotStep === 'code' ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                                <div className={`w-2 h-2 rounded-full ${forgotStep === 'password' ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                            </div>
+
+                            {/* Step 1: Enter Email */}
+                            {forgotStep === 'email' && (
+                                <form onSubmit={handleSendCode} className="space-y-4">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                                        Enter your email to receive a 6-digit reset code.
+                                    </p>
+                                    <div className="space-y-1.5">
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Email</label>
+                                        <input
+                                            type="email"
+                                            value={forgotEmail}
+                                            onChange={(e) => setForgotEmail(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-200 outline-none"
+                                            placeholder="Enter your email"
+                                            required
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                                    >
+                                        {isLoading ? 'Sending...' : 'Send Code'}
+                                    </button>
+                                </form>
+                            )}
+
+                            {/* Step 2: Enter Code */}
+                            {forgotStep === 'code' && (
+                                <form onSubmit={handleVerifyCode} className="space-y-4">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                                        Enter the 6-digit code sent to <span className="font-medium text-blue-600">{forgotEmail}</span>
+                                    </p>
+                                    <div className="space-y-1.5">
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Verification Code</label>
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={resetCode}
+                                            onChange={(e) => setResetCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-200 outline-none text-center text-2xl tracking-[0.5em] font-mono"
+                                            placeholder="000000"
+                                            maxLength={6}
+                                            required
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading || resetCode.length !== 6}
+                                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                                    >
+                                        {isLoading ? 'Verifying...' : 'Verify Code'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setForgotStep('email'); setResetCode(''); setError(''); }}
+                                        className="w-full py-2 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                                    >
+                                        ← Change Email
+                                    </button>
+                                </form>
+                            )}
+
+                            {/* Step 3: Enter New Password */}
+                            {forgotStep === 'password' && (
+                                <form onSubmit={handleResetPassword} className="space-y-4">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                                        Enter your new password.
+                                    </p>
+                                    <div className="space-y-3">
+                                        <div className="space-y-1.5">
+                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">New Password</label>
+                                            <input
+                                                type="password"
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-200 outline-none"
+                                                placeholder="Enter new password"
+                                                minLength={6}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Confirm Password</label>
+                                            <input
+                                                type="password"
+                                                value={confirmNewPassword}
+                                                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-200 outline-none"
+                                                placeholder="Confirm new password"
+                                                minLength={6}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                                    >
+                                        {isLoading ? 'Resetting...' : 'Reset Password'}
+                                    </button>
+                                </form>
+                            )}
+
+                            {/* Back to Login */}
+                            <button
+                                type="button"
+                                onClick={() => { setIsForgotPassword(false); setForgotStep('email'); setError(''); setSuccessMessage(''); setResetCode(''); setForgotEmail(''); }}
+                                className="w-full py-2 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                            >
+                                ← Back to Login
+                            </button>
+                        </div>
+                    ) : !isSignUp ? (
+                        <form onSubmit={handleLogin} className="space-y-5">
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    value={loginEmail}
+                                    onChange={(e) => setLoginEmail(e.target.value)}
+                                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-200 outline-none"
+                                    placeholder="Enter your email"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between items-center ml-1">
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Password</label>
+                                    <button type="button" onClick={() => { setIsForgotPassword(true); setError(''); }} className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 transition-colors">Forgot Password?</button>
+                                </div>
+                                <input
+                                    type="password"
+                                    value={loginPassword}
+                                    onChange={(e) => setLoginPassword(e.target.value)}
+                                    className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 transition-all duration-200 outline-none"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full py-4 bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+                            >
+                                {isLoading ? 'Signing in...' : 'Sign In'}
+                            </button>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleSignUp} className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">First Name</label>
+                                    <input
+                                        type="text"
+                                        value={signupData.firstName}
+                                        onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value.replace(/[^a-zA-Z\s]/g, '') })}
+                                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white outline-none transition-all text-sm"
+                                        placeholder="John"
+                                        pattern="[A-Za-z\s]+"
+                                        title="Only letters allowed"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">Last Name</label>
+                                    <input
+                                        type="text"
+                                        value={signupData.lastName}
+                                        onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value.replace(/[^a-zA-Z\s]/g, '') })}
+                                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white outline-none transition-all text-sm"
+                                        placeholder="Doe"
+                                        pattern="[A-Za-z\s]+"
+                                        title="Only letters allowed"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <input
+                                    type="text"
+                                    value={signupData.username}
+                                    onChange={(e) => setSignupData({ ...signupData, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') })}
+                                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white outline-none transition-all text-sm"
+                                    placeholder="Username"
+                                    pattern="[A-Za-z0-9_]+"
+                                    title="Letters, numbers and underscores only"
+                                    minLength={3}
+                                    required
+                                />
+                                <input
+                                    type="email"
+                                    value={signupData.email}
+                                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white outline-none transition-all text-sm"
+                                    placeholder="Email Address"
+                                    required
+                                />
+                                <input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    value={signupData.phone}
+                                    onChange={(e) => setSignupData({ ...signupData, phone: e.target.value.replace(/[^0-9]/g, '') })}
+                                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white outline-none transition-all text-sm"
+                                    placeholder="Phone Number (e.g. 03001234567)"
+                                    pattern="[0-9]{10,15}"
+                                    title="Enter a valid phone number (10-15 digits)"
+                                    minLength={10}
+                                    maxLength={15}
+                                    required
+                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input
+                                        type="password"
+                                        value={signupData.password}
+                                        onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white outline-none transition-all text-sm"
+                                        placeholder="Password"
+                                        required
+                                    />
+                                    <input
+                                        type="password"
+                                        value={signupData.confirmPassword}
+                                        onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-gray-900 dark:focus:ring-white outline-none transition-all text-sm"
+                                        placeholder="Confirm"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full py-3 bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                            >
+                                {isLoading ? 'Creating Account...' : 'Create Account'}
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Divider */}
+                    <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                            <span className="px-3 bg-white dark:bg-gray-900 text-gray-500 font-medium">Or continue with</span>
+                        </div>
+                    </div>
+
+                    {/* Social Stack - Vertical & Full Width */}
+                    <div className="flex flex-col gap-2">
+                        <button
+                            onClick={handleGoogleLogin}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group text-gray-700 dark:text-white font-medium text-sm"
+                        >
+                            <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                            </svg>
+                            Google
+                        </button>
+                        <button
+                            onClick={() => {
+                                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+                                window.location.href = `${apiUrl}/api/auth/facebook`;
+                            }}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-[#1877F2] text-white rounded-xl hover:bg-[#166fe5] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md shadow-blue-500/20 group font-medium text-sm"
+                        >
+                            <svg className="w-4 h-4 bg-white rounded-full p-0.5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="#1877F2">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            </svg>
+                            Facebook
+                        </button>
+                    </div>
+
+                    {/* Footer text */}
+                    <div className="mt-4 text-center text-xs text-gray-400 dark:text-gray-500">
+                        <p>
+                            By continuing, you agree to our <a href="#" className="hover:text-gray-900 dark:hover:text-white underline transition-colors">Terms</a> and <a href="#" className="hover:text-gray-900 dark:hover:text-white underline transition-colors">Privacy</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default Login;

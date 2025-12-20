@@ -99,6 +99,30 @@ export const api = {
             }
             return await res.json();
         },
+        verifyResetCode: async (email: string, code: string) => {
+            const res = await fetch(`${API_URL}/auth/verify-reset-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Invalid or expired code');
+            }
+            return await res.json();
+        },
+        resetPasswordWithCode: async (email: string, code: string, password: string) => {
+            const res = await fetch(`${API_URL}/auth/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code, password })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to reset password');
+            }
+            return await res.json();
+        },
         resetPassword: async (token: string, password: string) => {
             const res = await fetch(`${API_URL}/auth/reset-password/${token}`, {
                 method: 'POST',

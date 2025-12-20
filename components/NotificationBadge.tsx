@@ -27,7 +27,7 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({ onClick }) => {
 
     const loadUnreadCount = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:5001/api/notifications/unread', {
                 headers: {
                     'Authorization': `Bearer ${token}`

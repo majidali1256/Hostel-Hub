@@ -57,7 +57,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ hostelId, currentUserId }) => {
 
     const handleHelpful = async (reviewId: string) => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch(`http://localhost:5001/api/reviews/${reviewId}/helpful`, {
                 method: 'POST',
                 headers: {

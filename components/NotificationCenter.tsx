@@ -44,7 +44,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     const loadNotifications = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const unreadOnly = filter === 'unread' ? '?unreadOnly=true' : '';
             const res = await fetch(`http://localhost:5001/api/notifications${unreadOnly}`, {
                 headers: {
@@ -63,7 +63,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     const markAsRead = async (id: string) => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             await fetch(`http://localhost:5001/api/notifications/${id}/read`, {
                 method: 'PATCH',
                 headers: {
@@ -81,7 +81,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     const markAllAsRead = async () => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             await fetch('http://localhost:5001/api/notifications/read-all', {
                 method: 'PATCH',
                 headers: {
@@ -97,7 +97,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     const deleteNotification = async (id: string) => {
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             await fetch(`http://localhost:5001/api/notifications/${id}`, {
                 method: 'DELETE',
                 headers: {

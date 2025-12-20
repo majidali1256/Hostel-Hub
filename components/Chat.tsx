@@ -3,7 +3,7 @@ import { useSocket } from '../contexts/SocketContext';
 import { format } from 'date-fns';
 
 interface Message {
-    id: string;
+    _id: string;
     conversationId: string;
     senderId: any;
     content: string;
@@ -80,7 +80,7 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
         // Listen for read receipts
         socket.on('message:read', ({ messageId, userId }) => {
             setMessages(prev => prev.map(msg =>
-                msg.id === messageId
+                msg._id === messageId
                     ? { ...msg, readBy: [...msg.readBy, { userId, readAt: new Date() }] }
                     : msg
             ));
@@ -208,16 +208,17 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
                     </div>
                 ) : (
                     messages.map((message) => {
-                        const isOwn = message.senderId._id === currentUserId;
-                        const isRead = message.readBy.some(r => r.userId !== currentUserId);
+                        const senderId = typeof message.senderId === 'object' ? message.senderId._id : message.senderId;
+                        const isOwn = senderId === currentUserId;
+                        const isRead = (message.readBy || []).some(r => r.userId !== currentUserId);
 
                         return (
                             <div
-                                key={message.id}
+                                key={message._id}
                                 className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div className={`max-w-[70%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
-                                    {!isOwn && (
+                                    {!isOwn && typeof message.senderId === 'object' && (
                                         <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                                             {message.senderId.firstName} {message.senderId.lastName}
                                         </span>

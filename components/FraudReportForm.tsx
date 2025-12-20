@@ -37,7 +37,7 @@ const FraudReportForm: React.FC<FraudReportFormProps> = ({
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('hh_access_token');
+            const token = localStorage.getItem('token');
             const res = await fetch('http://localhost:5001/api/fraud/report', {
                 method: 'POST',
                 headers: {

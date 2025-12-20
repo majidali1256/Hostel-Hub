@@ -58,8 +58,19 @@ const TrustBadge: React.FC<TrustBadgeProps> = ({ userId, showScore = true, size 
     }, [userId]);
 
     const loadTrustScore = async () => {
+        if (!userId) {
+            setIsLoading(false);
+            return;
+        }
         try {
-            const res = await fetch(`http://localhost:5001/api/users/${userId}/trust-score`);
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const res = await fetch(`${apiUrl}/api/users/${userId}/trust-score`);
+            if (!res.ok) {
+                // Silently fail for UI components to prevent page crash
+                console.warn(`Could not load trust score for ${userId}: ${res.status}`);
+                setTrustScore(null);
+                return;
+            }
             const data = await res.json();
             setTrustScore(data);
         } catch (error) {

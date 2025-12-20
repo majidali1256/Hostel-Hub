@@ -76,6 +76,7 @@ const App: React.FC = () => {
   const [searchFilters, setSearchFilters] = useState<Record<string, any> | null>(null);
   const [searchBarKey, setSearchBarKey] = useState(Date.now());
   const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
+  const [initialHostelId, setInitialHostelId] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const savedTheme = localStorage.getItem('theme');
     return (savedTheme as 'light' | 'dark') || 'light';
@@ -89,6 +90,49 @@ const App: React.FC = () => {
     }
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Initialize state from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    const hostelIdParam = params.get('hostelId');
+
+    if (hostelIdParam) {
+      setInitialHostelId(hostelIdParam);
+    } else if (viewParam) {
+      setCurrentView(viewParam as any);
+    }
+  }, []);
+
+  // Restore selected hostel when hostels data loads
+  useEffect(() => {
+    if (initialHostelId && hostels.length > 0) {
+      const found = hostels.find(h => h.id === initialHostelId);
+      if (found) {
+        setSelectedHostel(found);
+        setInitialHostelId(null);
+      }
+    }
+  }, [hostels, initialHostelId]);
+
+  // Sync URL with state changes
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (selectedHostel) {
+      params.set('hostelId', selectedHostel.id);
+      params.delete('view');
+    } else {
+      params.delete('hostelId');
+      if (currentView !== 'dashboard') {
+        params.set('view', currentView);
+      } else {
+        params.delete('view');
+      }
+    }
+    const newSearch = params.toString();
+    const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname;
+    window.history.replaceState({ path: newUrl }, '', newUrl);
+  }, [currentView, selectedHostel]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
