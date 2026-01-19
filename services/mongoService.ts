@@ -159,12 +159,16 @@ export const api = {
         },
         subscribeToHostels: (callback: (hostels: Hostel[]) => void) => {
             const fetchHostels = () => {
-                fetch(`${API_URL}/hostels`, {
+                fetch(`${API_URL}/hostels?limit=50`, { // Fetch first 50 for initial load
                     headers: getAuthHeaders()
                 })
                     .then(res => res.json())
                     .then(data => {
-                        if (Array.isArray(data)) {
+                        // Handle paginated response format
+                        if (data && Array.isArray(data.hostels)) {
+                            callback(data.hostels);
+                        } else if (Array.isArray(data)) {
+                            // Fallback for old format
                             callback(data);
                         } else {
                             console.error('Failed to fetch hostels:', data);
@@ -177,7 +181,7 @@ export const api = {
                     });
             };
             fetchHostels();
-            const interval = setInterval(fetchHostels, 30000); // Poll every 30 seconds instead of 5
+            const interval = setInterval(fetchHostels, 30000); // Poll every 30 seconds
             return () => clearInterval(interval);
         },
         getHostel: async (id: string) => {
@@ -236,6 +240,18 @@ export const api = {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
+        },
+        toggleHostelStatus: async (id: string, status: 'Available' | 'Inactive') => {
+            const res = await fetch(`${API_URL}/hostels/${id}/status`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ status })
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to update status');
+            }
+            return res.json();
         },
         addReview: async (hostelId: string, review: { rating: number; comment: string }) => {
             const res = await fetch(`${API_URL}/hostels/${hostelId}/reviews`, {
@@ -409,6 +425,13 @@ export const api = {
             });
             return await res.json();
         },
+        markAsRead: async (conversationId: string) => {
+            const res = await fetch(`${API_URL}/conversations/${conversationId}/read`, {
+                method: 'PATCH',
+                headers: getAuthHeaders()
+            });
+            return await res.json();
+        },
         sendMessage: async (conversationId: string, content: string, type?: string) => {
             const res = await fetch(`${API_URL}/messages`, {
                 method: 'POST',
@@ -421,18 +444,41 @@ export const api = {
             }
             return await res.json();
         },
-        markAsRead: async (messageId: string) => {
-            const res = await fetch(`${API_URL}/messages/${messageId}/read`, {
-                method: 'PATCH',
-                headers: getAuthHeaders()
-            });
-            return await res.json();
-        },
         delete: async (id: string) => {
             const res = await fetch(`${API_URL}/conversations/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to delete conversation');
+            }
+            return await res.json();
+        },
+
+
+    },
+    messages: {
+        delete: async (id: string) => {
+            const res = await fetch(`${API_URL}/messages/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to delete message');
+            }
+            return await res.json();
+        },
+        star: async (id: string) => {
+            const res = await fetch(`${API_URL}/messages/${id}/star`, {
+                method: 'PATCH',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to star message');
+            }
             return await res.json();
         }
     },

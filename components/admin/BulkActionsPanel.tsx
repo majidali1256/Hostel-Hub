@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
 
 interface User {
     id: string;
@@ -28,7 +30,8 @@ const BulkActionsPanel: React.FC = () => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const { confirm } = useConfirm();
+    const { toast } = useToast();
 
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -90,47 +93,48 @@ const BulkActionsPanel: React.FC = () => {
 
     const executeBulkAction = async (action: string) => {
         if (selectedIds.size === 0) {
-            setMessage({ type: 'error', text: 'No items selected' });
+            toast.showError('No items selected');
             return;
         }
 
-        const confirmed = window.confirm(
-            `Are you sure you want to ${action} ${selectedIds.size} ${entityType}?`
-        );
-        if (!confirmed) return;
+        if (await confirm({
+            title: `Bulk ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+            message: `Are you sure you want to ${action} ${selectedIds.size} ${entityType}?`,
+            type: action === 'delete' ? 'danger' : 'warning',
+        })) {
+            try {
+                setActionLoading(true);
+                const token = localStorage.getItem('token');
+                const endpoint = entityType === 'users'
+                    ? `${apiUrl}/api/admin/bulk/users`
+                    : `${apiUrl}/api/admin/bulk/hostels`;
 
-        try {
-            setActionLoading(true);
-            const token = localStorage.getItem('token');
-            const endpoint = entityType === 'users'
-                ? `${apiUrl}/api/admin/bulk/users`
-                : `${apiUrl}/api/admin/bulk/hostels`;
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        [entityType === 'users' ? 'userIds' : 'hostelIds']: Array.from(selectedIds),
+                        action
+                    })
+                });
 
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    [entityType === 'users' ? 'userIds' : 'hostelIds']: Array.from(selectedIds),
-                    action
-                })
-            });
+                const data = await res.json();
 
-            const data = await res.json();
-
-            if (res.ok) {
-                setMessage({ type: 'success', text: `Successfully ${action}ed ${data.affectedCount} ${entityType}` });
-                setSelectedIds(new Set());
-                loadData();
-            } else {
-                setMessage({ type: 'error', text: data.error || 'Action failed' });
+                if (res.ok) {
+                    toast.showSuccess(`Successfully ${action}ed ${data.affectedCount} ${entityType}`);
+                    setSelectedIds(new Set());
+                    loadData();
+                } else {
+                    toast.showError(data.error || 'Action failed');
+                }
+            } catch (error) {
+                toast.showError('Failed to execute action');
+            } finally {
+                setActionLoading(false);
             }
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Failed to execute action' });
-        } finally {
-            setActionLoading(false);
         }
     };
 
@@ -163,14 +167,7 @@ const BulkActionsPanel: React.FC = () => {
                 </div>
             </div>
 
-            {/* Message */}
-            {message && (
-                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300'
-                    }`}>
-                    {message.text}
-                    <button onClick={() => setMessage(null)} className="ml-4 font-bold">×</button>
-                </div>
-            )}
+
 
             {/* Actions Bar */}
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">

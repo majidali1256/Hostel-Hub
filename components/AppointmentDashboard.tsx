@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/mongoService';
 import Button from './Button';
+import CancellationModal from './CancellationModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface Appointment {
     _id: string;
@@ -24,6 +26,9 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all');
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+    const toast = useToast();
 
     useEffect(() => {
         loadAppointments();
@@ -67,19 +72,27 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
             });
 
             if (res.ok) {
-                alert('Appointment confirmed! Customer will be notified.');
+                toast.showSuccess('Appointment confirmed! Customer will be notified.');
                 loadAppointments();
+            } else {
+                throw new Error('Failed to confirm');
             }
         } catch (error) {
-            alert('Failed to confirm appointment');
+            toast.showError('Failed to confirm appointment');
         }
     };
 
-    const handleCancel = async (appointmentId: string) => {
-        const reason = prompt('Reason for cancellation (optional):');
+    const handleCancelClick = (appointmentId: string) => {
+        setSelectedAppointmentId(appointmentId);
+        setShowCancelModal(true);
+    };
+
+    const handleConfirmCancel = async (reason: string) => {
+        if (!selectedAppointmentId) return;
+
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:5001/api/appointments/${appointmentId}`, {
+            const res = await fetch(`http://localhost:5001/api/appointments/${selectedAppointmentId}`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -89,11 +102,15 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
             });
 
             if (res.ok) {
-                alert('Appointment cancelled');
+                toast.showSuccess('Appointment cancelled');
                 loadAppointments();
+                setShowCancelModal(false);
+                setSelectedAppointmentId(null);
+            } else {
+                throw new Error('Failed to cancel');
             }
         } catch (error) {
-            alert('Failed to cancel appointment');
+            toast.showError('Failed to cancel appointment');
         }
     };
 
@@ -136,8 +153,8 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
                         key={status}
                         onClick={() => setFilter(status as any)}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === status
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white'
                             }`}
                     >
                         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -200,7 +217,7 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
                                     </Button>
                                     <Button
                                         variant="secondary"
-                                        onClick={() => handleCancel(appointment._id)}
+                                        onClick={() => handleCancelClick(appointment._id)}
                                         className="bg-red-600 hover:bg-red-700 text-white"
                                     >
                                         ✗ Decline
@@ -212,7 +229,7 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
                                 <div className="mt-4">
                                     <Button
                                         variant="secondary"
-                                        onClick={() => handleCancel(appointment._id)}
+                                        onClick={() => handleCancelClick(appointment._id)}
                                     >
                                         Cancel Request
                                     </Button>
@@ -222,6 +239,17 @@ const AppointmentDashboard: React.FC<AppointmentDashboardProps> = ({ userRole, u
                     ))}
                 </div>
             )}
+
+            <CancellationModal
+                isOpen={showCancelModal}
+                onClose={() => {
+                    setShowCancelModal(false);
+                    setSelectedAppointmentId(null);
+                }}
+                onConfirm={handleConfirmCancel}
+                isLoading={false}
+                isOwner={userRole === 'owner'}
+            />
         </div>
     );
 };

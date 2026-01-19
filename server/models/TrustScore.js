@@ -129,8 +129,8 @@ trustScoreSchema.methods.assignBadges = function () {
     const badges = [];
     const factors = this.factors;
 
-    // Verified badge
-    if (factors.verifiedEmail && factors.verifiedPhone) {
+    // Verified badge - only at 100 score with accepted documents
+    if (this.score >= 100 && factors.documentStatus === 'verified') {
         badges.push('verified');
     }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/mongoService';
+import { useToast } from '../contexts/ToastContext';
 import CancellationModal from './CancellationModal';
 import PaymentReceiptUpload from './PaymentReceiptUpload';
 
@@ -38,6 +39,7 @@ const BookingHistory: React.FC = () => {
     const [cancelLoading, setCancelLoading] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentStep, setPaymentStep] = useState<'instructions' | 'upload'>('instructions');
+    const toast = useToast();
 
     useEffect(() => {
         fetchBookings();
@@ -69,10 +71,10 @@ const BookingHistory: React.FC = () => {
             ));
             setShowCancelModal(false);
             setSelectedBooking(null);
-            alert('Booking cancelled successfully');
+            toast.showSuccess('Booking cancelled successfully');
         } catch (error: any) {
             console.error('Error cancelling booking:', error);
-            alert(error.message || 'Failed to cancel booking');
+            toast.showError(error.message || 'Failed to cancel booking');
         } finally {
             setCancelLoading(false);
         }
@@ -429,8 +431,9 @@ const BookingHistory: React.FC = () => {
                                             setShowPaymentModal(false);
                                             setSelectedBooking(null);
                                             setPaymentStep('instructions');
+                                            setPaymentStep('instructions');
                                             fetchBookings(); // Refresh the list
-                                            alert('Payment proof submitted! The owner will verify your payment.');
+                                            toast.showSuccess('Payment proof submitted! The owner will verify your payment.');
                                         }}
                                         onCancel={() => {
                                             setShowPaymentModal(false);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Hostel, User } from '../types';
+import { useToast } from '../contexts/ToastContext';
 import Button from './Button';
 import FairnessBadge from './FairnessBadge';
 import TrustBadge from './TrustBadge';
@@ -13,6 +14,7 @@ interface HostelDetailProps {
     onBack: () => void;
     onEdit: (hostel: Hostel) => void;
     onDelete: (hostelId: string) => void;
+    onToggleStatus?: (hostelId: string, newStatus: 'Available' | 'Inactive') => void;
     onRate: (hostelId: string, score: number, comment?: string) => void;
     onClearRating: (hostelId: string) => void;
     onMarkAsStayed: (hostelId: string) => void;
@@ -90,12 +92,13 @@ const StarRating: React.FC<{ hostelId: string; userRating?: number; onRate: (id:
 };
 
 
-const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack, onEdit, onDelete, onRate, onClearRating, onMarkAsStayed, onMessageOwner, onBook }) => {
+const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack, onEdit, onDelete, onToggleStatus, onRate, onClearRating, onMarkAsStayed, onMessageOwner, onBook }) => {
     // Defensive null checks
     const images = hostel?.images || [];
     const defaultImage = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&q=80';
     const [mainImage, setMainImage] = useState(images[0] || defaultImage);
     const [showReviewsModal, setShowReviewsModal] = useState(false);
+    const toast = useToast();
 
     // Guard against undefined hostel
     if (!hostel) {
@@ -288,10 +291,16 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {owner ? (
                                         <div>
-                                            <div className="flex items-center gap-2 mb-1">
+                                            <div className="flex items-center gap-2 mb-3">
                                                 <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{owner.firstName} {owner.lastName}</p>
-                                                <TrustBadge userId={owner.id} size="sm" />
                                             </div>
+
+                                            {/* Owner Trust Score - Prominent Display */}
+                                            <div className="mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Owner Trust Score</p>
+                                                <TrustBadge userId={owner.id} size="md" />
+                                            </div>
+
                                             {/* Masked Contact Number */}
                                             <div className="mb-3">
                                                 <p className="text-gray-500 dark:text-gray-400">
@@ -306,7 +315,7 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                                                     </button>
                                                 )}
                                             </div>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Hostel Reviews: {hostel.reviews?.length || 0}</p>
+
                                             <div className="mt-3 flex flex-wrap gap-2">
                                                 {owner.contactNumber && isContactRevealed && (
                                                     <Button
@@ -357,9 +366,29 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                         )}
 
                         {isOwner && (
-                            <div className="flex gap-4">
-                                <Button onClick={() => onEdit(hostel)} fullWidth>Edit Listing</Button>
-                                <Button onClick={() => onDelete(hostel.id)} className="bg-red-600 text-white hover:bg-red-700 focus:ring-red-500" fullWidth>Delete Listing</Button>
+                            <div className="space-y-3">
+                                {/* Status indicator */}
+                                <div className="flex items-center gap-2 p-3 rounded-lg bg-gray-100 dark:bg-gray-700">
+                                    <span className={`w-3 h-3 rounded-full ${hostel.status === 'Inactive' ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Status: {hostel.status === 'Inactive' ? 'Inactive (Hidden from customers)' : 'Active'}
+                                    </span>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button onClick={() => onEdit(hostel)} fullWidth>Edit Listing</Button>
+                                    {onToggleStatus && (
+                                        <Button
+                                            onClick={() => onToggleStatus(hostel.id, hostel.status === 'Inactive' ? 'Available' : 'Inactive')}
+                                            className={hostel.status === 'Inactive'
+                                                ? 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                                                : 'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500'}
+                                            fullWidth
+                                        >
+                                            {hostel.status === 'Inactive' ? 'Activate' : 'Deactivate'}
+                                        </Button>
+                                    )}
+                                    <Button onClick={() => onDelete(hostel.id)} className="bg-red-600 text-white hover:bg-red-700 focus:ring-red-500" fullWidth>Delete</Button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -374,7 +403,7 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                     hostelName={hostel.name}
                     onClose={() => setIsAppointmentModalOpen(false)}
                     onSuccess={() => {
-                        alert('Appointment request sent! The owner will contact you soon.');
+                        toast.showSuccess('Appointment request sent! The owner will contact you soon.');
                     }}
                 />
             )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { X, Calendar, User, Phone, CreditCard, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 import CancellationModal from './CancellationModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface Booking {
     _id: string;
@@ -42,6 +43,8 @@ const BookingVerificationDashboard: React.FC = () => {
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelLoading, setCancelLoading] = useState(false);
+
+    const { toast } = useToast();
 
     useEffect(() => {
         fetchBookings();
@@ -87,9 +90,9 @@ const BookingVerificationDashboard: React.FC = () => {
             setSelectedBooking(null);
             setRejectionReason('');
 
-            alert(approved ? 'Payment approved! Booking confirmed.' : 'Payment rejected.');
+            toast.showSuccess(approved ? 'Payment approved! Booking confirmed.' : 'Payment rejected.');
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to verify payment');
+            toast.showError(error.response?.data?.error || 'Failed to verify payment');
         } finally {
             setProcessingId(null);
         }
@@ -108,9 +111,9 @@ const BookingVerificationDashboard: React.FC = () => {
 
             // Refresh bookings
             await fetchBookings();
-            alert('Booking accepted successfully!');
+            toast.showSuccess('Booking accepted successfully!');
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to accept booking');
+            toast.showError(error.response?.data?.error || 'Failed to accept booking');
         } finally {
             setProcessingId(null);
         }
@@ -133,10 +136,10 @@ const BookingVerificationDashboard: React.FC = () => {
             await fetchBookings();
             setShowCancelModal(false);
             setSelectedBooking(null);
-            alert('Booking cancelled successfully');
+            toast.showSuccess('Booking cancelled successfully');
         } catch (error: any) {
             console.error('Error cancelling booking:', error);
-            alert(error.response?.data?.error || 'Failed to cancel booking');
+            toast.showError(error.response?.data?.error || 'Failed to cancel booking');
         } finally {
             setCancelLoading(false);
         }

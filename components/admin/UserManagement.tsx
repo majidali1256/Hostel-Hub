@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, UserX, UserCheck, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useToast } from '../../contexts/ToastContext';
 
 const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -7,6 +9,8 @@ const UserManagement: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('all');
+    const { confirm } = useConfirm();
+    const { toast } = useToast();
 
     useEffect(() => {
         loadUsers();
@@ -53,21 +57,33 @@ const UserManagement: React.FC = () => {
     };
 
     const handleAction = async (userId: string, action: string) => {
-        if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+        if (await confirm({
+            title: `${action === 'ban' ? 'Ban' : 'Unban'} User`,
+            message: `Are you sure you want to ${action} this user?`,
+            type: action === 'ban' ? 'danger' : 'warning',
+            confirmText: action === 'ban' ? 'Ban User' : 'Unban User'
+        })) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    toast.showError('Authentication token missing');
+                    return;
+                }
 
-        try {
-            const token = localStorage.getItem('token');
-            await fetch(`http://localhost:5001/api/admin/users/${userId}/action`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ action, reason: 'Admin action' })
-            });
-            loadUsers();
-        } catch (error) {
-            console.error('Failed to perform action:', error);
+                await fetch(`http://localhost:5001/api/admin/users/${userId}/action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ action, reason: 'Admin action' })
+                });
+                loadUsers();
+                toast.showSuccess(`User ${action}ned successfully`);
+            } catch (error) {
+                console.error('Failed to perform action:', error);
+                toast.showError('Failed to update user status');
+            }
         }
     };
 

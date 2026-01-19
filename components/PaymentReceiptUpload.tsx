@@ -65,8 +65,9 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
 
         try {
             const token = localStorage.getItem('token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
             await axios.post(
-                `${import.meta.env.VITE_API_URL}/api/bookings/${bookingId}/payment-receipt`,
+                `${apiUrl}/api/bookings/${bookingId}/payment-receipt`,
                 {
                     paymentMethod,
                     transactionId,

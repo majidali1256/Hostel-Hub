@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Hostel } from '../types';
+import { useToast } from '../contexts/ToastContext';
 import Button from './Button';
 import Input from './Input';
 import { format, differenceInDays, addDays } from 'date-fns';
@@ -29,6 +30,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
     const [error, setError] = useState<string | null>(null);
     const [totalPrice, setTotalPrice] = useState(0);
     const [duration, setDuration] = useState(0);
+    const toast = useToast();
 
     // Payment flow states
     const [bookingResponse, setBookingResponse] = useState<any>(null);
@@ -117,7 +119,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                     onSuccess={() => {
                         setShowReceiptUpload(false);
                         onClose();
-                        alert('Payment receipt uploaded successfully! The owner will verify it soon.');
+                        toast.showSuccess('Payment receipt uploaded successfully! The owner will verify it soon.');
                     }}
                     onCancel={() => setShowReceiptUpload(false)}
                 />

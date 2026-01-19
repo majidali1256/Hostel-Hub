@@ -88,8 +88,14 @@ const TrustBadge: React.FC<TrustBadgeProps> = ({ userId, showScore = true, size 
         );
     }
 
-    if (!trustScore || trustScore.badges.length === 0) {
-        return null;
+    if (!trustScore) {
+        // Show a default placeholder when no trust score available
+        return (
+            <div className="flex items-center gap-1 text-gray-500 text-sm">
+                <span>🛡️</span>
+                <span>Trust Score: --</span>
+            </div>
+        );
     }
 
     const sizeClasses = {

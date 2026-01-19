@@ -26,7 +26,12 @@ app.use('/api/verification', verificationRoutes);
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
+    .then(async () => {
+        console.log('Connected to MongoDB');
+        // Ensure indexes are created
+        await Hostel.ensureIndexes();
+        console.log('Hostel indexes ensured');
+    })
     .catch(err => console.error('MongoDB connection error:', err));
 
 // Root route - API status
@@ -573,14 +578,35 @@ app.get('/api/hostels/recommendations', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/hostels', async (req, res) => {
+    console.time('hostels-query');
     try {
-        // Optimize: Only fetch the first image for the list view to reduce payload size
-        const hostels = await Hostel.find({}, {
+        const { includeInactive, ownerId, page = 1, limit = 12 } = req.query;
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.min(50, Math.max(1, parseInt(limit))); // Cap at 50
+        const skip = (pageNum - 1) * limitNum;
+
+        // Build query filter
+        let filter = {};
+
+        // If an owner is viewing their own hostels, include inactive ones
+        if (includeInactive === 'true' && ownerId) {
+            filter.ownerId = ownerId;
+        } else {
+            // For regular users, only show active hostels (exclude 'Inactive')
+            filter.status = { $ne: 'Inactive' };
+        }
+
+        // Get total count for pagination metadata
+        const totalCount = await Hostel.countDocuments(filter);
+        const totalPages = Math.ceil(totalCount / limitNum);
+
+        // Optimize: Only fetch needed fields for LIST view
+        const hostels = await Hostel.find(filter, {
             name: 1,
             location: 1,
             price: 1,
             rating: 1,
-            reviews: 1,
+            reviews: 1, // All reviews
             amenities: 1,
             category: 1,
             status: 1,
@@ -588,10 +614,26 @@ app.get('/api/hostels', async (req, res) => {
             verified: 1,
             ownerId: 1,
             images: { $slice: 1 },
-            coordinates: 1
+            coordinates: 1,
+            createdAt: 1
+        })
+            .sort({ createdAt: -1 }) // Newest first
+            .skip(skip)
+            .limit(limitNum)
+            .lean();
+
+        console.timeEnd('hostels-query');
+        res.json({
+            hostels,
+            pagination: {
+                currentPage: pageNum,
+                totalPages,
+                totalCount,
+                hasMore: pageNum < totalPages
+            }
         });
-        res.json(hostels);
     } catch (error) {
+        console.timeEnd('hostels-query');
         res.status(500).json({ error: error.message });
     }
 });
@@ -773,11 +815,21 @@ app.post('/api/hostels/:id/reviews', authMiddleware, async (req, res) => {
         const hostel = await Hostel.findById(req.params.id);
         if (!hostel) return res.status(404).json({ error: 'Hostel not found' });
 
-        hostel.reviews.push({
-            userId: req.userId,
-            rating,
-            comment
-        });
+        const existingReviewIndex = hostel.reviews.findIndex(r => r.userId.toString() === req.userId);
+
+        if (existingReviewIndex !== -1) {
+            // Update existing review
+            hostel.reviews[existingReviewIndex].rating = rating;
+            hostel.reviews[existingReviewIndex].comment = comment;
+            hostel.reviews[existingReviewIndex].date = new Date();
+        } else {
+            // Add new review
+            hostel.reviews.push({
+                userId: req.userId,
+                rating,
+                comment
+            });
+        }
 
         hostel.calculateAverageRating();
         await hostel.save();
@@ -1498,9 +1550,36 @@ app.get('/api/conversations', authMiddleware, async (req, res) => {
         })
             .populate('participants', 'firstName lastName email profilePicture')
             .populate('hostelId', 'name location images')
+            .populate('lastMessage')
             .sort({ updatedAt: -1 });
 
-        res.json(conversations);
+        // Calculate unread counts
+        const conversationIds = conversations.map(c => c._id);
+        const unreadCounts = await Message.aggregate([
+            {
+                $match: {
+                    conversationId: { $in: conversationIds },
+                    'readBy.userId': { $ne: new mongoose.Types.ObjectId(req.user.userId) },
+                    senderId: { $ne: new mongoose.Types.ObjectId(req.user.userId) }
+                }
+            },
+            {
+                $group: {
+                    _id: '$conversationId',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const conversationsWithUnread = conversations.map(conv => {
+            const unread = unreadCounts.find(u => u._id.equals(conv._id));
+            return {
+                ...conv.toObject(),
+                unreadCount: unread ? unread.count : 0
+            };
+        });
+
+        res.json(conversationsWithUnread);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1586,6 +1665,35 @@ app.delete('/api/conversations/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Mark all messages in conversation as read
+app.patch('/api/conversations/:id/read', authMiddleware, async (req, res) => {
+    try {
+        const conversation = await Conversation.findById(req.params.id);
+        if (!conversation) {
+            return res.status(404).json({ error: 'Conversation not found' });
+        }
+
+        if (!conversation.hasParticipant(req.user.userId)) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        // Update all unread messages in this conversation for this user
+        await Message.updateMany(
+            {
+                conversationId: req.params.id,
+                'readBy.userId': { $ne: req.user.userId }
+            },
+            {
+                $push: { readBy: { userId: req.user.userId, readAt: new Date() } }
+            }
+        );
+
+        res.json({ message: 'Marked as read' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Get messages for a conversation
 app.get('/api/conversations/:id/messages', authMiddleware, async (req, res) => {
     try {
@@ -1605,12 +1713,20 @@ app.get('/api/conversations/:id/messages', authMiddleware, async (req, res) => {
             query.createdAt = { $lt: new Date(before) };
         }
 
+        console.log(`Fetching messages for ${req.params.id} with query:`, JSON.stringify(query));
+
         const messages = await Message.find(query)
             .populate('senderId', 'firstName lastName profilePicture')
             .sort({ createdAt: -1 })
             .limit(parseInt(limit));
 
-        res.json(messages.reverse());
+        console.log(`Found ${messages.length} messages`);
+
+        const hasMore = messages.length === parseInt(limit);
+        res.json({
+            messages: messages.reverse(),
+            hasMore
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1641,29 +1757,42 @@ app.post('/api/messages', authMiddleware, async (req, res) => {
         await message.save();
         await message.populate('senderId', 'firstName lastName profilePicture');
 
-        // Update conversation's last message
-        conversation.lastMessage = {
-            content,
-            senderId: req.user.userId,
-            timestamp: message.createdAt
-        };
-        await conversation.save();
-
-        // Emit to conversation room
-        emitToConversation(conversationId, 'message:new', message);
-
-        // Emit notification to other participants
-        const otherParticipant = conversation.getOtherParticipant(req.user.userId);
-        if (otherParticipant) {
-            emitToUser(otherParticipant, 'notification:message', {
-                conversationId,
-                message
-            });
-        }
-
+        // Send response immediately since message is saved
         res.status(201).json(message);
+
+        // Perform background updates (conversation, socket)
+        (async () => {
+            try {
+                // Update conversation's last message
+                conversation.lastMessage = {
+                    content: type === 'image' ? 'Image' : content, // Don't store full base64 in lastMessage
+                    senderId: req.user.userId,
+                    timestamp: message.createdAt
+                };
+                await conversation.save();
+
+                // Emit to conversation room
+                emitToConversation(conversationId, 'message:new', message);
+
+                // Emit notification to other participants
+                const otherParticipant = conversation.getOtherParticipant(req.user.userId);
+                if (otherParticipant) {
+                    emitToUser(otherParticipant, 'notification:message', {
+                        conversationId,
+                        message
+                    });
+                }
+            } catch (err) {
+                console.error('Error in background message updates:', err);
+            }
+        })();
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        // Only return error if message wasn't saved/response not sent
+        if (!res.headersSent) {
+            res.status(500).json({ error: error.message });
+        } else {
+            console.error('Error after response sent:', error);
+        }
     }
 });
 
@@ -1686,6 +1815,60 @@ app.patch('/api/messages/:id/read', authMiddleware, async (req, res) => {
         });
 
         res.json(message);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Star/Unstar message
+app.patch('/api/messages/:id/star', authMiddleware, async (req, res) => {
+    try {
+        const message = await Message.findById(req.params.id);
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
+        // Check conversation participation
+        const conversation = await Conversation.findById(message.conversationId);
+        if (!conversation || !conversation.hasParticipant(req.user.userId)) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        const userId = req.user.userId;
+        const starIndex = message.starredBy.indexOf(userId);
+
+        if (starIndex === -1) {
+            message.starredBy.push(userId);
+        } else {
+            message.starredBy.splice(starIndex, 1);
+        }
+
+        await message.save();
+        res.json(message);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete message
+app.delete('/api/messages/:id', authMiddleware, async (req, res) => {
+    try {
+        const message = await Message.findById(req.params.id);
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
+        // Only sender can delete
+        if (message.senderId.toString() !== req.user.userId) {
+            return res.status(403).json({ error: 'Only sender can delete message' });
+        }
+
+        await message.deleteOne();
+
+        // Notify conversation participants
+        emitToConversation(message.conversationId, 'message:deleted', message._id);
+
+        res.json({ message: 'Message deleted' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -4024,7 +4207,8 @@ app.post('/api/bookings/:id/payment-receipt', authMiddleware, async (req, res) =
 
         res.json(booking);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Payment receipt upload error:', error);
+        res.status(500).json({ error: error.message || 'Failed to upload payment receipt' });
     }
 });
 

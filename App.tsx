@@ -1,41 +1,52 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
 import { User, Hostel } from './types';
+import { SpinnerIcon } from './components/icons/SpinnerIcon';
+import { api } from './services/mongoService';
+import { useSocket } from './contexts/SocketContext';
+import { useToast } from './contexts/ToastContext';
+import { ConfirmProvider, useConfirm } from './contexts/ConfirmContext';
+
+// Eagerly loaded core components
 import Login from './components/Login';
-import AccountTypeSelector from './components/AccountTypeSelector';
 import Sidebar from './components/Sidebar';
 import SearchBar from './components/SearchBar';
 import HostelList from './components/HostelList';
 import Modal from './components/Modal';
-import PropertyListingForm from './components/PropertyListingForm';
 import { PlusIcon } from './components/icons/PlusIcon';
-import Profile from './components/Profile';
-import HostelDetail from './components/HostelDetail';
 import { MenuIcon } from './components/icons/MenuIcon';
-import Settings from './components/Settings';
-import { SpinnerIcon } from './components/icons/SpinnerIcon';
-import { api } from './services/mongoService';
-import { useSocket } from './contexts/SocketContext';
-
-// New Module Imports
-import ChatDashboard from './components/ChatDashboard';
-import RoommateMatchList from './components/RoommateMatchList';
-import AgreementDashboard from './components/AgreementDashboard';
-import AdminLayout from './components/admin/AdminLayout';
-import OAuthCallback from './components/OAuthCallback';
-import FairRentEstimator from './components/FairRentEstimator';
-import BookingVerificationDashboard from './components/BookingVerificationDashboard';
-import BookingHistory from './components/BookingHistory';
-import AppointmentDashboard from './components/AppointmentDashboard';
-import SmartSearch from './components/SmartSearch';
-import FraudDashboard from './components/FraudDashboard';
-import BookingForm from './components/BookingForm';
 import NotificationBadge from './components/NotificationBadge';
 import NotificationCenter from './components/NotificationCenter';
 
-// Module 3: AI-Based Search Components
-import SearchFilters from './components/SearchFilters';
-import HostelMap from './components/HostelMap';
-import AIRecommendations from './components/AIRecommendations';
+// Lazy loaded components for performance optimization
+const AccountTypeSelector = React.lazy(() => import('./components/AccountTypeSelector'));
+const PropertyListingForm = React.lazy(() => import('./components/PropertyListingForm'));
+const Profile = React.lazy(() => import('./components/Profile'));
+const HostelDetail = React.lazy(() => import('./components/HostelDetail'));
+const Settings = React.lazy(() => import('./components/Settings'));
+const ChatDashboard = React.lazy(() => import('./components/ChatDashboard'));
+const RoommateMatchList = React.lazy(() => import('./components/RoommateMatchList'));
+const AgreementDashboard = React.lazy(() => import('./components/AgreementDashboard'));
+const AdminLayout = React.lazy(() => import('./components/admin/AdminLayout'));
+const OAuthCallback = React.lazy(() => import('./components/OAuthCallback'));
+const FairRentEstimator = React.lazy(() => import('./components/FairRentEstimator'));
+const BookingVerificationDashboard = React.lazy(() => import('./components/BookingVerificationDashboard'));
+const BookingHistory = React.lazy(() => import('./components/BookingHistory'));
+const AppointmentDashboard = React.lazy(() => import('./components/AppointmentDashboard'));
+const SmartSearch = React.lazy(() => import('./components/SmartSearch'));
+const FraudDashboard = React.lazy(() => import('./components/FraudDashboard'));
+const BookingForm = React.lazy(() => import('./components/BookingForm'));
+
+// Module 3: AI-Based Search Components (Lazy Loaded)
+const SearchFilters = React.lazy(() => import('./components/SearchFilters'));
+const HostelMap = React.lazy(() => import('./components/HostelMap'));
+const AIRecommendations = React.lazy(() => import('./components/AIRecommendations'));
+
+// Loading component
+const LoadingFallback = () => (
+  <div className="flex justify-center items-center h-full min-h-[200px]">
+    <SpinnerIcon className="w-8 h-8 text-blue-600 animate-spin" />
+  </div>
+);
 
 const getRandomImages = (count = 3) => {
   const placeholderImages = [
@@ -57,6 +68,8 @@ const App: React.FC = () => {
   }
 
   const { connect, disconnect } = useSocket();
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -236,7 +249,7 @@ const App: React.FC = () => {
       setSelectedHostel(null);
     } catch (error) {
       console.error('Failed to start conversation:', error);
-      alert('Failed to start conversation with owner');
+      toast.showError('Failed to start conversation with owner');
     } finally {
       setIsLoading(false);
     }
@@ -404,19 +417,81 @@ const App: React.FC = () => {
       console.error('Error object:', error);
       console.error('Error message:', error instanceof Error ? error.message : String(error));
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
-      alert('Failed to save hostel. Please try again.');
+      toast.showError('Failed to save hostel. Please try again.');
     }
   };
 
   const handleDeleteHostel = async (hostelId: string) => {
-    if (window.confirm('Are you sure you want to delete this hostel listing?')) {
-      await api.db.deleteHostel(hostelId);
-      setSelectedHostel(null);
+    if (await confirm({
+      title: 'Delete Hostel',
+      message: 'Are you sure you want to delete this hostel listing?',
+      type: 'danger',
+      confirmText: 'Delete'
+    })) {
+      try {
+        await api.db.deleteHostel(hostelId);
+        toast.showSuccess('Hostel deleted successfully');
+        setSelectedHostel(null);
+        setHostels(prev => prev.filter(h => h.id !== hostelId));
+      } catch (error) {
+        console.error('Failed to delete hostel:', error);
+        toast.showError('Failed to delete hostel');
+      }
+    }
+  };
+
+  const handleToggleHostelStatus = async (hostelId: string, newStatus: 'Available' | 'Inactive') => {
+    try {
+      const updatedHostel = await api.db.toggleHostelStatus(hostelId, newStatus);
+      // Update the selected hostel with new status
+      if (selectedHostel && selectedHostel.id === hostelId) {
+        setSelectedHostel({ ...selectedHostel, status: newStatus });
+      }
+      // Refresh the hostels list
+      setHostels(prev => prev.map(h => h.id === hostelId ? { ...h, status: newStatus } : h));
+      toast.showSuccess(newStatus === 'Inactive' ? 'Hostel deactivated! It is now hidden from customers.' : 'Hostel activated! It is now visible to customers.');
+    } catch (error: any) {
+      toast.showError(error.message || 'Failed to update status');
     }
   };
 
   const handleRateHostel = async (hostelId: string, score: number, comment?: string) => {
     if (!user) return;
+
+    // Optimistic Update
+    const previousHostels = [...hostels];
+    const previousSelectedHostel = selectedHostel; // Keep reference to previous state
+
+    // Create temp review
+    const tempReview = {
+      _id: 'temp-' + Date.now(),
+      userId: user.id,
+      userIdentifier: user.username || 'You',
+      rating: score,
+      comment,
+      date: new Date().toISOString()
+    };
+
+    // Update UI immediately
+    // Update UI immediately
+    if (selectedHostel && selectedHostel.id === hostelId) {
+      const updatedReviews = [...(selectedHostel.reviews || []).filter(r => r.userId !== user.id), tempReview];
+      const newAverage = updatedReviews.length > 0
+        ? updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length
+        : 0;
+      setSelectedHostel({ ...selectedHostel, reviews: updatedReviews, rating: newAverage });
+    }
+
+    setHostels(prev => prev.map(h => {
+      if (h.id === hostelId) {
+        const updatedReviews = [...(h.reviews || []).filter(r => r.userId !== user.id), tempReview];
+        const newAverage = updatedReviews.length > 0
+          ? updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length
+          : 0;
+        return { ...h, reviews: updatedReviews, rating: newAverage };
+      }
+      return h;
+    }));
 
     try {
       const token = localStorage.getItem('token');
@@ -434,27 +509,54 @@ const App: React.FC = () => {
       if (response.ok) {
         const updatedHostel = await response.json();
 
-        // Update hostels list
-        setHostels(prev => prev.map(h => h.id === hostelId ? { ...h, ...updatedHostel, id: h.id } : h));
+        // Update with server data (final truth)
+        setHostels(prev => prev.map(h =>
+          h.id === hostelId ? { ...h, reviews: updatedHostel.reviews, rating: updatedHostel.rating } : h
+        ));
 
-        // Update selected hostel if viewing it
         if (selectedHostel && selectedHostel.id === hostelId) {
-          setSelectedHostel({ ...selectedHostel, ...updatedHostel, id: selectedHostel.id });
+          setSelectedHostel(prev => prev ? { ...prev, reviews: updatedHostel.reviews, rating: updatedHostel.rating } : null);
         }
-        alert('Review submitted successfully!');
+        toast.showSuccess('Review submitted successfully!');
       } else {
-        const errorData = await response.json();
-        console.error('Failed to submit review:', errorData);
-        alert(`Failed to submit review: ${errorData.error || 'Unknown error'}`);
+        throw new Error('Failed to submit review');
       }
     } catch (error: any) {
       console.error('Error submitting review:', error);
-      alert(`Error submitting review: ${error.message || 'Check your connection'}`);
+      // Revert state
+      setHostels(previousHostels);
+      setSelectedHostel(previousSelectedHostel);
+      toast.showError(`Error submitting review: ${error.message || 'Check your connection'}`);
     }
   };
 
   const handleClearRating = async (hostelId: string) => {
     if (!user) return;
+
+    // Optimistic Update
+    const previousHostels = [...hostels];
+    const previousSelectedHostel = selectedHostel;
+
+    // Update UI immediately: Remove user's review
+    // Update UI immediately: Remove user's review
+    if (selectedHostel && selectedHostel.id === hostelId) {
+      const updatedReviews = (selectedHostel.reviews || []).filter(r => r.userId !== user.id);
+      const newAverage = updatedReviews.length > 0
+        ? updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length
+        : 0;
+      setSelectedHostel({ ...selectedHostel, reviews: updatedReviews, rating: newAverage });
+    }
+
+    setHostels(prev => prev.map(h => {
+      if (h.id === hostelId) {
+        const updatedReviews = (h.reviews || []).filter(r => r.userId !== user.id);
+        const newAverage = updatedReviews.length > 0
+          ? updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length
+          : 0;
+        return { ...h, reviews: updatedReviews, rating: newAverage };
+      }
+      return h;
+    }));
 
     try {
       const token = localStorage.getItem('token');
@@ -468,22 +570,27 @@ const App: React.FC = () => {
       });
 
       if (response.ok) {
-        const updatedHostel = await response.json();
+        const data = await response.json();
+        const updatedHostel = data.hostel;
 
-        // Update hostels list
-        setHostels(prev => prev.map(h => h.id === hostelId ? { ...h, ...updatedHostel, id: h.id } : h));
+        // Sync with server data
+        setHostels(prev => prev.map(h =>
+          h.id === hostelId ? { ...h, reviews: updatedHostel.reviews, rating: updatedHostel.rating } : h
+        ));
 
-        // Update selected hostel if viewing it
         if (selectedHostel && selectedHostel.id === hostelId) {
-          setSelectedHostel({ ...selectedHostel, ...updatedHostel, id: selectedHostel.id });
+          setSelectedHostel(prev => prev ? { ...prev, reviews: updatedHostel.reviews, rating: updatedHostel.rating } : null);
         }
+        toast.showSuccess('Review deleted successfully!');
       } else {
-        console.error('Failed to clear review');
-        alert('Failed to delete review. Please try again.');
+        throw new Error('Failed to clear review');
       }
     } catch (error) {
       console.error('Error clearing review:', error);
-      alert('Error deleting review. Please check your connection.');
+      // Revert state
+      setHostels(previousHostels);
+      setSelectedHostel(previousSelectedHostel);
+      toast.showError('Error deleting review. Please check your connection.');
     }
   };
 
@@ -502,12 +609,49 @@ const App: React.FC = () => {
     try {
       const updatedUser = await api.db.setUser(user.id, updatedData);
       setUser(updatedUser);
-      alert('Profile updated successfully!');
+      toast.showSuccess('Profile updated successfully!');
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile.');
+      toast.showError('Failed to update profile.');
     }
   };
+
+  const handleBookingSubmit = async (bookingData: any) => {
+    if (!user || !bookingHostel) return;
+
+    try {
+      // Call API to create booking
+      await api.bookings.create({
+        ...bookingData,
+        userId: user.id
+      });
+
+      toast.showSuccess('Booking request sent successfully!');
+      setIsBookingModalOpen(false);
+      setBookingHostel(null);
+      // Verify booking immediately by switching view
+      setCurrentView('booking-history');
+    } catch (error: any) {
+      console.error('Booking failed:', error);
+      toast.showError(error.message || 'Failed to submit booking request');
+    }
+  };
+
+  const handleBookHostel = (hostelId: string) => {
+    if (!user) {
+      toast.showError('Please login to book a hostel');
+      return;
+    }
+    const hostel = hostels.find(h => h.id === hostelId) || (selectedHostel?.id === hostelId ? selectedHostel : null);
+
+    if (hostel) {
+      setBookingHostel(hostel);
+      setIsBookingModalOpen(true);
+    } else {
+      toast.showError('Hostel not found');
+    }
+  };
+
   const filteredHostels = useMemo(() => {
     if (!searchQuery && !searchFilters) {
       return hostels;
@@ -614,10 +758,85 @@ const App: React.FC = () => {
   }
 
   if (user.role === 'pending') {
-    return <AccountTypeSelector onSelectRole={handleRoleSelect} username={user.username} />
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <AccountTypeSelector onSelectRole={handleRoleSelect} username={user.username} />
+      </Suspense>
+    );
   }
 
   const isSearchActive = !!(searchQuery || searchFilters);
+
+  const getPageTitle = () => {
+    if (currentView === 'profile') return 'My Profile';
+    if (currentView === 'settings') return 'Settings';
+    if (currentView === 'chat') return 'Messages';
+    if (currentView === 'roommate-matching') return 'Roommate Matching';
+    if (currentView === 'agreements') return 'Rental Agreements';
+    if (currentView === 'admin') return 'Admin Dashboard';
+    if (currentView === 'rent-estimator') return 'Fair Rent Estimator';
+    if (currentView === 'bookings') return 'Manage Bookings';
+    if (currentView === 'booking-history') return 'My Bookings';
+    return 'Dashboard';
+  }
+
+  const renderCurrentView = () => {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        {(() => {
+          switch (currentView) {
+            case 'profile':
+              return <Profile user={user} allHostels={hostels} onSwitchRole={handleSwitchRole} onUpdateUser={handleUpdateUser} />;
+            case 'settings':
+              return <Settings user={user} onUpdateUser={handleUpdateUser} theme={theme} toggleTheme={toggleTheme} />;
+            case 'chat':
+              return <ChatDashboard currentUser={user} initialConversationId={initialConversationId} />;
+            case 'roommate-matching':
+              return <RoommateMatchList />;
+            case 'agreements':
+              return <AgreementDashboard user={user} />;
+            case 'admin':
+              // Only allow admin users to access admin panel
+              if (user?.role !== 'admin') {
+                toast.showError('Access denied. Admin privileges required.');
+                setCurrentView('dashboard');
+                return null;
+              }
+              return <AdminLayout />;
+            case 'rent-estimator':
+              return <FairRentEstimator onClose={() => setCurrentView('dashboard')} />;
+            case 'booking-history':
+              return <BookingHistory />;
+            case 'bookings':
+              return <BookingVerificationDashboard />;
+            case 'appointments':
+              return <AppointmentDashboard userRole={user.role as 'owner' | 'customer'} userId={user.id} />;
+            case 'dashboard':
+            default:
+              if (selectedHostel) {
+                return (
+                  <HostelDetail
+                    hostel={selectedHostel}
+                    user={user}
+                    owner={selectedHostelOwner || undefined}
+                    onBack={() => setSelectedHostel(null)}
+                    onEdit={handleOpenEditModal}
+                    onDelete={handleDeleteHostel}
+                    onToggleStatus={handleToggleHostelStatus}
+                    onRate={handleRateHostel}
+                    onClearRating={handleClearRating}
+                    onMarkAsStayed={handleMarkAsStayed}
+                    onMessageOwner={handleMessageOwner}
+                    onBook={handleBookHostel}
+                  />
+                );
+              }
+              return renderDashboard();
+          }
+        })()}
+      </Suspense>
+    );
+  };
 
   const renderDashboard = () => (
     <>
@@ -651,17 +870,25 @@ const App: React.FC = () => {
         {/* Collapsible Advanced Filters Panel */}
         {showFilters && (
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <SearchFilters
-              onApplyFilters={handleApplyFilters}
-              onClearFilters={handleClearSearch}
-            />
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <Suspense fallback={<LoadingFallback />}>
+                <SearchFilters
+                  onApplyFilters={handleApplyFilters}
+                  onClearFilters={handleClearSearch}
+                />
+              </Suspense>
+            </div>
           </div>
         )}
       </div>
 
       {/* AI Recommendations Section */}
       <div className="mb-8">
-        <AIRecommendations onHostelClick={setSelectedHostel} />
+        <div className="mb-8">
+          <Suspense fallback={<div className="h-64 bg-gray-100 rounded-lg animate-pulse" />}>
+            <AIRecommendations onHostelClick={setSelectedHostel} />
+          </Suspense>
+        </div>
       </div>
 
       {/* Controls Bar */}
@@ -716,110 +943,6 @@ const App: React.FC = () => {
     </>
   );
 
-  const handleBookHostel = (hostelId: string) => {
-    const hostel = hostels.find(h => h.id === hostelId);
-    if (hostel) {
-      setBookingHostel(hostel);
-      setIsBookingModalOpen(true);
-    }
-  };
-
-  const handleBookingSubmit = async (bookingData: any) => {
-    try {
-      const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
-      const response = await fetch(`${apiUrl}/api/bookings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(bookingData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create booking');
-      }
-
-      const newBooking = await response.json();
-      setIsBookingModalOpen(false);
-      setBookingHostel(null);
-      alert('Booking request sent successfully! Please wait for owner approval.');
-      return newBooking;
-    } catch (error: any) {
-      console.error('Booking error:', error);
-      alert(`Booking failed: ${error.message}`);
-      throw error;
-    }
-  };
-
-  const getPageTitle = () => {
-    if (selectedHostel) return selectedHostel.name;
-    if (currentView === 'profile') return 'My Profile';
-    if (currentView === 'settings') return 'Settings';
-    if (currentView === 'chat') return 'Messages';
-    if (currentView === 'roommate-matching') return 'Roommate Matching';
-    if (currentView === 'agreements') return 'Agreements';
-    if (currentView === 'admin') return 'Admin Dashboard';
-    if (currentView === 'rent-estimator') return 'Fair Rent Estimator';
-    if (currentView === 'bookings') return 'Manage Bookings';
-    if (currentView === 'booking-history') return 'My Bookings';
-    return 'Dashboard';
-  }
-
-  const renderCurrentView = () => {
-    switch (currentView) {
-      case 'profile':
-        return <Profile user={user} allHostels={hostels} onSwitchRole={handleSwitchRole} onUpdateUser={handleUpdateUser} />;
-      case 'settings':
-        return <Settings user={user} onUpdateUser={handleUpdateUser} theme={theme} toggleTheme={toggleTheme} />;
-      case 'chat':
-        return <ChatDashboard currentUser={user} initialConversationId={initialConversationId} />;
-      case 'roommate-matching':
-        return <RoommateMatchList />;
-      case 'agreements':
-        return <AgreementDashboard user={user} />;
-      case 'admin':
-        // Only allow admin users to access admin panel
-        if (user?.role !== 'admin') {
-          alert('Access denied. Admin privileges required.');
-          setCurrentView('dashboard');
-          return null;
-        }
-        return <AdminLayout />;
-      case 'rent-estimator':
-        return <FairRentEstimator onClose={() => setCurrentView('dashboard')} />;
-      case 'booking-history':
-        return <BookingHistory />;
-      case 'bookings':
-        return <BookingVerificationDashboard />;
-      case 'appointments':
-        return <AppointmentDashboard userRole={user.role as 'owner' | 'customer'} userId={user.id} />;
-      case 'dashboard':
-      default:
-        if (selectedHostel) {
-          return (
-            <HostelDetail
-              hostel={selectedHostel}
-              user={user}
-              owner={selectedHostelOwner || undefined}
-              onBack={() => setSelectedHostel(null)}
-              onEdit={handleOpenEditModal}
-              onDelete={handleDeleteHostel}
-              onRate={handleRateHostel}
-              onClearRating={handleClearRating}
-              onMarkAsStayed={handleMarkAsStayed}
-              onMessageOwner={handleMessageOwner}
-              onBook={handleBookHostel}
-            />
-          );
-        }
-        return renderDashboard();
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans">
       {isMenuOpen && <Sidebar user={user} onLogout={handleLogout} onNavigate={handleNavigate} onClose={() => setIsMenuOpen(false)} />}
@@ -863,21 +986,25 @@ const App: React.FC = () => {
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <PropertyListingForm
-          onSubmit={handleSaveHostel}
-          onCancel={() => setIsModalOpen(false)}
-          initialData={editingHostel}
-        />
+        <Suspense fallback={<LoadingFallback />}>
+          <PropertyListingForm
+            onSubmit={handleSaveHostel}
+            onCancel={() => setIsModalOpen(false)}
+            initialData={editingHostel}
+          />
+        </Suspense>
       </Modal>
 
       {isBookingModalOpen && bookingHostel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <BookingForm
-              hostel={bookingHostel}
-              onSubmit={handleBookingSubmit}
-              onClose={() => setIsBookingModalOpen(false)}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <BookingForm
+                hostel={bookingHostel}
+                onSubmit={handleBookingSubmit}
+                onClose={() => setIsBookingModalOpen(false)}
+              />
+            </Suspense>
           </div>
         </div>
       )}
@@ -885,4 +1012,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App; 
+export default App;

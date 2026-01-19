@@ -52,6 +52,13 @@ const hostelSchema = new mongoose.Schema({
 // Create 2dsphere index for geospatial queries
 hostelSchema.index({ coordinates: '2dsphere' });
 
+// Performance indexes for common queries
+hostelSchema.index({ status: 1 });
+hostelSchema.index({ ownerId: 1 });
+hostelSchema.index({ price: 1 });
+hostelSchema.index({ rating: -1 }); // Descending for "top rated" sorting
+hostelSchema.index({ status: 1, verified: 1 }); // Compound for common filter
+
 // Calculate average rating from reviews
 hostelSchema.methods.calculateAverageRating = function () {
     if (this.reviews.length === 0) {

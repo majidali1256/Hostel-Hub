@@ -13,8 +13,7 @@ const messageSchema = new mongoose.Schema({
     },
     content: {
         type: String,
-        required: true,
-        maxlength: 2000
+        required: true
     },
     type: {
         type: String,
@@ -33,6 +32,10 @@ const messageSchema = new mongoose.Schema({
             ref: 'User'
         },
         readAt: Date
+    }],
+    starredBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }],
     createdAt: {
         type: Date,

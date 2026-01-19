@@ -525,6 +525,7 @@ module.exports = {
     sendEmail,
     sendBookingConfirmation,
     sendNewBookingToOwner,
+    sendPaymentReceiptUploaded,
     sendPaymentVerified,
     sendPaymentRejected,
     sendBookingCancellation,

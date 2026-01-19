@@ -15,12 +15,10 @@ const categoryStyles: { [key: string]: string } = {
 const placeholderImage = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop&q=80';
 
 
-const HostelCard: React.FC<HostelCardProps> = ({ hostel, onSelectHostel }) => {
+const HostelCard: React.FC<HostelCardProps> = React.memo(({ hostel, onSelectHostel }) => {
   const displayImage = hostel.images && hostel.images.length > 0 ? hostel.images[0] : placeholderImage;
 
-  const averageRating = hostel.ratings && hostel.ratings.length > 0
-    ? hostel.ratings.reduce((acc, r) => acc + r.score, 0) / hostel.ratings.length
-    : hostel.rating;
+  const averageRating = hostel.rating || 0;
 
   return (
     <button
@@ -29,7 +27,13 @@ const HostelCard: React.FC<HostelCardProps> = ({ hostel, onSelectHostel }) => {
     >
       <div>
         <div className="relative">
-          <img src={displayImage} alt={hostel.name} className="w-full h-48 object-cover" />
+          <img
+            src={displayImage}
+            alt={hostel.name}
+            className="w-full h-48 object-cover"
+            loading="lazy"
+            decoding="async"
+          />
           <span className={`absolute top-2 right-2 text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${categoryStyles[hostel.category] || categoryStyles.any}`}>
             For {hostel.category}
           </span>
@@ -75,6 +79,6 @@ const HostelCard: React.FC<HostelCardProps> = ({ hostel, onSelectHostel }) => {
       </div>
     </button>
   );
-};
+});
 
 export default HostelCard;

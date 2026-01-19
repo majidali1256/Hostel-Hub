@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/mongoService';
+import { useToast } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import Button from '../Button';
 
 interface VerificationRequest {
@@ -27,6 +29,8 @@ const VerificationReview: React.FC = () => {
     const [currentDocIndex, setCurrentDocIndex] = useState(0);
     const [rejectionReason, setRejectionReason] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const toast = useToast();
+    const { confirm } = useConfirm();
 
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -41,44 +45,49 @@ const VerificationReview: React.FC = () => {
             setRequests(data.requests || []);
         } catch (error) {
             console.error('Failed to load verification requests:', error);
-            alert('Failed to load verification requests');
+            toast.showError('Failed to load verification requests');
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleApprove = async (userId: string) => {
-        if (!confirm('Are you sure you want to approve this verification request?')) return;
-
-        try {
-            setIsProcessing(true);
-            await api.verification.approveUser(userId);
-            alert('User verified successfully!');
-            loadRequests();
-        } catch (error: any) {
-            alert(error.message || 'Failed to approve user');
-        } finally {
-            setIsProcessing(false);
+        if (await confirm({
+            title: 'Approve Verification',
+            message: 'Are you sure you want to approve this verification request?',
+            type: 'info',
+            confirmText: 'Approve'
+        })) {
+            try {
+                setIsProcessing(true);
+                await api.verification.approveUser(userId);
+                toast.showSuccess('User verified successfully!');
+                loadRequests();
+            } catch (error: any) {
+                toast.showError(error.message || 'Failed to approve user');
+            } finally {
+                setIsProcessing(false);
+            }
         }
     };
 
     const handleReject = async () => {
         if (!selectedRequest) return;
         if (!rejectionReason.trim()) {
-            alert('Please provide a reason for rejection');
+            toast.showError('Please provide a reason for rejection');
             return;
         }
 
         try {
             setIsProcessing(true);
             await api.verification.rejectUser(selectedRequest.id, rejectionReason);
-            alert('Verification rejected');
+            toast.showSuccess('Verification rejected');
             setIsRejectModalOpen(false);
             setRejectionReason('');
             setSelectedRequest(null);
             loadRequests();
         } catch (error: any) {
-            alert(error.message || 'Failed to reject user');
+            toast.showError(error.message || 'Failed to reject user');
         } finally {
             setIsProcessing(false);
         }

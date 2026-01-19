@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useToast } from '../../contexts/ToastContext';
 import Button from '../Button';
 
 interface Flag {
@@ -41,6 +42,7 @@ const FraudDashboard: React.FC = () => {
     const [riskFilter, setRiskFilter] = useState('all');
     const [selectedCheck, setSelectedCheck] = useState<FraudCheck | null>(null);
     const [reviewNotes, setReviewNotes] = useState('');
+    const toast = useToast();
 
     useEffect(() => {
         loadFraudQueue();
@@ -94,14 +96,14 @@ const FraudDashboard: React.FC = () => {
             });
 
             if (res.ok) {
-                alert(`Listing ${decision === 'approve' ? 'approved' : 'rejected'} successfully`);
+                toast.showSuccess(`Listing ${decision === 'approve' ? 'approved' : 'rejected'} successfully`);
                 setSelectedCheck(null);
                 setReviewNotes('');
                 loadFraudQueue();
                 loadStats();
             }
         } catch (error) {
-            alert('Failed to review listing');
+            toast.showError('Failed to review listing');
         }
     };
 
@@ -212,7 +214,7 @@ const FraudDashboard: React.FC = () => {
                             <option value="all">All</option>
                             <option value="high">High (70+)</option>
                             <option value="medium">Medium (40-69)</option>
-                            <option value="low">Low (<40)</option>
+                            <option value="low">Low (&lt;40)</option>
                         </select>
                     </div>
                 </div>

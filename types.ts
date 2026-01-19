@@ -34,4 +34,5 @@ export interface Hostel {
   tour360?: string[];
   category: RoomCategory | string; // Backend uses RoomCategory but keep string for compatibility
   genderPreference?: HostelCategory;
+  status?: 'Available' | 'Booked' | 'Maintenance' | 'Inactive';
 }
