@@ -51,7 +51,16 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
             const messagesList = Array.isArray(res) ? res : res?.messages;
             const hasMoreData = Array.isArray(res) ? false : res?.hasMore;
 
-            if (messagesList) {
+            // Check for error response from server
+            if (res?.error) {
+                console.error('Server error:', res.error);
+                if (!before) setError(res.error);
+                setIsLoading(false);
+                setIsLoadingMore(false);
+                return;
+            }
+
+            if (messagesList !== undefined) {
                 if (before) {
                     setMessages(prev => [...messagesList, ...prev]);
                     setIsLoadingMore(false);
@@ -89,7 +98,27 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
         socket.emit('join:conversation', conversationId);
 
         socket.on('message:new', (message: Message) => {
-            setMessages(prev => [...prev, message]);
+            // Avoid duplicates: don't add if it's from the current user (already added optimistically)
+            const senderId = typeof message.senderId === 'object' ? message.senderId._id : message.senderId;
+            if (String(senderId) === String(currentUserId)) {
+                // Update the temp message with the real one from server
+                setMessages(prev => {
+                    const hasTempMessage = prev.some(m => m._id.startsWith('temp-'));
+                    if (hasTempMessage) {
+                        // Replace temp message with the real one
+                        return prev.map(m => m._id.startsWith('temp-') && m.content === message.content ? message : m);
+                    }
+                    // If no temp message found, check if this exact message already exists
+                    const exists = prev.some(m => m._id === message._id);
+                    return exists ? prev : [...prev, message];
+                });
+            } else {
+                // Message from other user - add it
+                setMessages(prev => {
+                    const exists = prev.some(m => m._id === message._id);
+                    return exists ? prev : [...prev, message];
+                });
+            }
             scrollToBottom();
         });
 

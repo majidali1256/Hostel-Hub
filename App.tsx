@@ -519,7 +519,8 @@ const App: React.FC = () => {
         }
         toast.showSuccess('Review submitted successfully!');
       } else {
-        throw new Error('Failed to submit review');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to submit review');
       }
     } catch (error: any) {
       console.error('Error submitting review:', error);

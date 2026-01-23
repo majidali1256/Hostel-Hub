@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   process.env.BROWSER = 'safari'; // Attempt to force Safari
   return {
     server: {
-      port: 3000,
+      port: 3001,
       host: true, // Listen on all addresses (0.0.0.0)
       open: false, // Disable auto-open in Docker
     },

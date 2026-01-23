@@ -622,9 +622,12 @@ app.get('/api/hostels', async (req, res) => {
             .limit(limitNum)
             .lean();
 
+        // Add id field from _id for lean queries (virtuals don't work with .lean())
+        const hostelsWithId = hostels.map(h => ({ ...h, id: h._id.toString() }));
+
         console.timeEnd('hostels-query');
         res.json({
-            hostels,
+            hostels: hostelsWithId,
             pagination: {
                 currentPage: pageNum,
                 totalPages,
@@ -812,6 +815,8 @@ app.delete('/api/hostels/:id', authMiddleware, async (req, res) => {
 app.post('/api/hostels/:id/reviews', authMiddleware, async (req, res) => {
     try {
         const { rating, comment } = req.body;
+        console.log('Review submission:', { hostelId: req.params.id, userId: req.userId, rating, comment });
+        
         const hostel = await Hostel.findById(req.params.id);
         if (!hostel) return res.status(404).json({ error: 'Hostel not found' });
 

@@ -56,16 +56,19 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
 
     if (selectedConversationId) {
         const selectedConv = conversations.find(c => c._id === selectedConversationId);
-        const otherParticipant = selectedConv?.participants.find((p: any) => p._id !== currentUser.id);
-        const chatName = selectedConv?.hostelId ? selectedConv.hostelId.name : `${otherParticipant?.firstName} ${otherParticipant?.lastName}`;
+        const otherParticipant = selectedConv?.participants?.find((p: any) => p._id !== currentUser.id);
+        const chatName = selectedConv?.hostelId?.name || 
+            (otherParticipant ? `${otherParticipant.firstName || ''} ${otherParticipant.lastName || ''}`.trim() : 'Chat');
 
         return (
-            <Chat
-                conversationId={selectedConversationId}
-                currentUserId={currentUser.id}
-                chatName={chatName}
-                onClose={() => setSelectedConversationId(null)}
-            />
+            <div className="max-w-4xl mx-auto h-[calc(100vh-100px)]">
+                <Chat
+                    conversationId={selectedConversationId}
+                    currentUserId={currentUser.id}
+                    chatName={chatName || 'Chat'}
+                    onClose={() => setSelectedConversationId(null)}
+                />
+            </div>
         );
     }
 
@@ -92,7 +95,7 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
             ) : (
                 <div className="flex-1 overflow-y-auto">
                     {conversations.map(conv => {
-                        const otherParticipant = conv.participants.find((p: any) => p._id !== currentUser.id);
+                        const otherParticipant = conv.participants?.find((p: any) => p._id !== currentUser.id);
                         const isSelected = conv._id === selectedConversationId;
                         return (
                             <div
@@ -115,7 +118,7 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
                                 className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors flex items-center gap-4 ${isSelected ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}
                             >
                                 <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-lg relative">
-                                    {otherParticipant?.firstName[0]}
+                                    {otherParticipant?.firstName?.[0] || '?'}
                                     {conv.unreadCount > 0 && (
                                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center border-2 border-white dark:border-gray-800">
                                             {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
@@ -125,7 +128,7 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-1">
                                         <h3 className={`font-semibold truncate ${conv.unreadCount > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'}`}>
-                                            {conv.hostelId ? conv.hostelId.name : `${otherParticipant?.firstName} ${otherParticipant?.lastName}`}
+                                            {conv.hostelId?.name || `${otherParticipant?.firstName || ''} ${otherParticipant?.lastName || ''}`.trim() || 'Chat'}
                                         </h3>
                                         {conv.lastMessage && (
                                             <span className="text-xs text-gray-500 dark:text-gray-400">

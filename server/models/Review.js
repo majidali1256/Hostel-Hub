@@ -119,7 +119,7 @@ reviewSchema.methods.toggleHelpful = function (userId) {
 // Static method to calculate average ratings for a hostel
 reviewSchema.statics.getHostelRatings = async function (hostelId) {
     const result = await this.aggregate([
-        { $match: { hostelId: mongoose.Types.ObjectId(hostelId), status: 'approved' } },
+        { $match: { hostelId: new mongoose.Types.ObjectId(hostelId), status: 'approved' } },
         {
             $group: {
                 _id: null,
