@@ -149,8 +149,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpSubmit }) => {
                 { username: signupData.username }
             );
 
-            if (result.user) {
-                onSignUpSubmit(result.user.id, {
+            if (result && result.id) {
+                onSignUpSubmit(result.id, {
                     firstName: signupData.firstName,
                     lastName: signupData.lastName,
                     username: signupData.username,

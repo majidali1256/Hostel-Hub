@@ -4,17 +4,19 @@ import { format } from 'date-fns';
 import { useToast } from '../contexts/ToastContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { api } from '../services/mongoService';
+import EmojiPicker from 'emoji-picker-react';
 
 export interface Message {
     _id: string;
     conversationId: string;
     senderId: any;
     content: string;
-    type: 'text' | 'image';
+    type: 'text' | 'image' | 'audio';
     createdAt: string;
     readBy?: Array<{ userId: string; readAt: string }>;
     starredBy?: string[];
-    status?: 'sending' | 'sent' | 'error';
+    status?: 'sending' | 'sent' | 'delivered' | 'read' | 'error';
+    isEdited?: boolean;
 }
 
 interface ChatProps {
@@ -40,6 +42,18 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
+
+    // Voice Recording State
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Advanced Chat State
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const emojiPickerRef = useRef<HTMLDivElement>(null);
 
     // Load messages
     const loadMessages = useCallback(async (before?: string) => {
@@ -126,6 +140,10 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
             setMessages(prev => prev.filter(m => m._id !== messageId));
         });
 
+        socket.on('message:edited', (editedMessage: Message) => {
+            setMessages(prev => prev.map(m => m._id === editedMessage._id ? editedMessage : m));
+        });
+
         socket.on('user:typing', ({ userId }) => {
             if (userId !== currentUserId) {
                 setOtherUserTyping(true);
@@ -150,6 +168,7 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
             socket.emit('leave:conversation', conversationId);
             socket.off('message:new');
             socket.off('message:deleted');
+            socket.off('message:edited');
             socket.off('user:typing');
             socket.off('user:stopped-typing');
             socket.off('message:read');
@@ -171,6 +190,18 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
         }
         prevScrollHeightRef.current = 0;
     }, [messages]);
+
+    // Close emoji picker on outside click
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -207,11 +238,99 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
         }, 1000);
     };
 
-    const handleSendMessage = async (e?: React.FormEvent, content: string = newMessage, type: 'text' | 'image' = 'text') => {
+    // --- Audio Recording Logic ---
+    const handleStartRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    audioChunksRef.current.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+                
+                // Convert blob to base64
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = () => {
+                    const base64Audio = reader.result as string;
+                    handleSendMessage(undefined, base64Audio, 'audio');
+                };
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingDuration(0);
+            
+            recordingTimerRef.current = setInterval(() => {
+                setRecordingDuration(prev => prev + 1);
+            }, 1000);
+            
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            toast.showError('Microphone access denied or unavailable.');
+        }
+    };
+
+    const handleStopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+            }
+        }
+    };
+
+    const handleCancelRecording = () => {
+         if (mediaRecorderRef.current && isRecording) {
+            // Stop but don't send
+            mediaRecorderRef.current.onstop = () => {
+                const stream = mediaRecorderRef.current?.stream;
+                stream?.getTracks().forEach(track => track.stop());
+            };
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+            }
+         }
+    };
+
+    // Format duration helper
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+    // ----------------------------
+
+    const handleSendMessage = async (e?: React.FormEvent, content: string = newMessage, type: 'text' | 'image' | 'audio' = 'text') => {
         if (e) e.preventDefault();
         const textToSend = content.trim();
 
         if (!textToSend && type === 'text') return;
+
+        if (editingMessageId && type === 'text') {
+            try {
+                const res = await api.messages.updateContent(editingMessageId, textToSend);
+                setMessages(prev => prev.map(m => m._id === editingMessageId ? res : m));
+                setEditingMessageId(null);
+                setNewMessage('');
+                toast.showSuccess('Message updated');
+            } catch (error) {
+                console.error('Error updating message:', error);
+                toast.showError('Failed to update message');
+            }
+            return;
+        }
 
         // Optimistic Update
         const tempId = `temp-${Date.now()}`;
@@ -244,6 +363,17 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
             // Mark as error
             setMessages(prev => prev.map(m => m._id === tempId ? { ...m, status: 'error' } : m));
         }
+    };
+
+    const handleEditMessageClick = (message: Message) => {
+        setEditingMessageId(message._id);
+        setNewMessage(message.content);
+        setShowEmojiPicker(false);
+    };
+
+    const cancelEditing = () => {
+        setEditingMessageId(null);
+        setNewMessage('');
     };
 
     const handleDeleteMessage = async (messageId: string) => {
@@ -416,13 +546,31 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
                                                         </div>
                                                     )}
                                                 </div>
+                                            ) : message.type === 'audio' ? (
+                                                <div className="flex items-center gap-2">
+                                                    <audio controls src={message.content} className="max-w-[200px] h-10" />
+                                                </div>
                                             ) : (
-                                                <p className="text-sm break-words">{message.content}</p>
+                                                <p className="text-sm break-words">
+                                                    {message.content}
+                                                    {message.isEdited && <span className="text-xs opacity-70 ml-1">(edited)</span>}
+                                                </p>
                                             )}
                                         </div>
 
                                         {/* Message Actions */}
-                                        <div className={`absolute top-0 ${isOwn ? '-left-16' : '-right-16'} hidden group-hover:flex items-center gap-1 bg-white dark:bg-gray-800 shadow-sm rounded-lg p-1`}>
+                                        <div className={`absolute top-0 ${isOwn ? '-left-[4.5rem]' : '-right-16'} hidden group-hover:flex items-center gap-1 bg-white dark:bg-gray-800 shadow-sm rounded-lg p-1`}>
+                                            {isOwn && message.type === 'text' && (
+                                                <button
+                                                    onClick={() => handleEditMessageClick(message)}
+                                                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-blue-500 transition-colors"
+                                                    title="Edit message"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => handleStarMessage(message._id)}
                                                 className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${isStarred ? 'text-yellow-400' : 'text-gray-400'}`}
@@ -446,14 +594,34 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex items-center gap-1 mt-1">
                                         <span className="text-xs text-gray-400 dark:text-gray-500">
                                             {format(new Date(message.createdAt), 'HH:mm')}
                                         </span>
-                                        {isOwn && isRead && (
-                                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
-                                            </svg>
+                                        {isOwn && (
+                                            <span className="flex items-center">
+                                                {message.status === 'sending' ? (
+                                                    <svg className="w-4 h-4 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                ) : isRead ? (
+                                                    // Double Blue Check (Read)
+                                                    <div className="flex -space-x-2">
+                                                        <svg className="w-4 h-4 text-blue-500 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </div>
+                                                ) : (
+                                                    // Single Gray Check (Sent)
+                                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </span>
                                         )}
                                         {isStarred && (
                                             <svg className="w-3 h-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -480,43 +648,115 @@ const Chat: React.FC<ChatProps> = ({ conversationId, currentUserId, chatName, on
             </div>
 
             {/* Input */}
-            <form onSubmit={(e) => handleSendMessage(e)} className="p-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        title="Upload Image"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                    </button>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                    />
-                    <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => {
-                            setNewMessage(e.target.value);
-                            handleTyping();
-                        }}
-                        placeholder="Type a message..."
-                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                    <button
-                        type="submit"
-                        disabled={!newMessage.trim()}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        Send
-                    </button>
-                </div>
+            <form onSubmit={(e) => handleSendMessage(e)} className="p-4 border-t border-gray-200 dark:border-gray-700 relative">
+                {isRecording ? (
+                    <div className="flex items-center justify-between w-full h-12">
+                        <div className="flex items-center gap-3 text-red-500 animate-pulse">
+                            <div className="w-3 h-3 bg-red-500 rounded-full" />
+                            <span className="font-medium">{formatDuration(recordingDuration)}</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={handleCancelRecording}
+                                className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleStopRecording}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex gap-2 items-center w-full">
+                        {editingMessageId ? (
+                            <button
+                                type="button"
+                                onClick={cancelEditing}
+                                className="p-2 text-gray-500 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                title="Cancel Edit"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                    title="Upload Image"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                />
+                            </>
+                        )}
+                        <div className="relative flex-1 flex items-center">
+                            <button
+                                type="button"
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                className="absolute left-2 p-1 text-gray-400 hover:text-yellow-500 focus:outline-none"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </button>
+                            <input
+                                type="text"
+                                value={newMessage}
+                                onChange={(e) => {
+                                    setNewMessage(e.target.value);
+                                    handleTyping();
+                                }}
+                                placeholder={editingMessageId ? "Edit message..." : "Type a message..."}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            />
+                            {showEmojiPicker && (
+                                <div className="absolute bottom-12 left-0 z-50 shadow-xl" ref={emojiPickerRef}>
+                                    <EmojiPicker 
+                                        onEmojiClick={(e) => setNewMessage(prev => prev + e.emoji)}
+                                        width={300}
+                                        height={400}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        {newMessage.trim() ? (
+                            <button
+                                type="submit"
+                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shrink-0"
+                            >
+                                {editingMessageId ? 'Save' : 'Send'}
+                            </button>
+                        ) : !editingMessageId && (
+                            <button
+                                type="button"
+                                onClick={handleStartRecording}
+                                className="p-2 px-4 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors shrink-0 flex items-center justify-center"
+                                title="Hold to record audio"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
+                )}
             </form>
         </div>
     );

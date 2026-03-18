@@ -1770,7 +1770,7 @@ app.post('/api/messages', authMiddleware, async (req, res) => {
             try {
                 // Update conversation's last message
                 conversation.lastMessage = {
-                    content: type === 'image' ? 'Image' : content, // Don't store full base64 in lastMessage
+                    content: type === 'image' ? 'Image' : (type === 'audio' ? 'Voice Message' : content), // Don't store full base64 in lastMessage
                     senderId: req.user.userId,
                     timestamp: message.createdAt
                 };
@@ -1849,6 +1849,39 @@ app.patch('/api/messages/:id/star', authMiddleware, async (req, res) => {
         }
 
         await message.save();
+        res.json(message);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Edit message content
+app.patch('/api/messages/:id/content', authMiddleware, async (req, res) => {
+    try {
+        const { content } = req.body;
+        const message = await Message.findById(req.params.id);
+        
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
+        // Only sender can edit
+        if (message.senderId.toString() !== req.user.userId) {
+            return res.status(403).json({ error: 'Only sender can edit message' });
+        }
+
+        // Only allow text edits
+        if (message.type !== 'text') {
+            return res.status(400).json({ error: 'Only text messages can be edited' });
+        }
+
+        message.content = content;
+        message.isEdited = true;
+        await message.save();
+
+        // Notify conversation participants
+        emitToConversation(message.conversationId, 'message:edited', message);
+
         res.json(message);
     } catch (error) {
         res.status(500).json({ error: error.message });

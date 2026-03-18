@@ -136,8 +136,15 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
                                             </span>
                                         )}
                                     </div>
-                                    <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
-                                        {conv.lastMessage ? conv.lastMessage.content : 'Start a conversation'}
+                                    <p className={`text-sm truncate flex items-center gap-1 ${conv.unreadCount > 0 ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
+                                        {conv.lastMessage?.content === 'Voice Message' ? (
+                                            <>
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                                </svg>
+                                                Voice Message
+                                            </>
+                                        ) : conv.lastMessage ? conv.lastMessage.content : 'Start a conversation'}
                                     </p>
                                 </div>
                                 <button

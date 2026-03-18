@@ -480,6 +480,18 @@ export const api = {
                 throw new Error(err.error || 'Failed to star message');
             }
             return await res.json();
+        },
+        updateContent: async (id: string, content: string) => {
+            const res = await fetch(`${API_URL}/messages/${id}/content`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ content })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to update message');
+            }
+            return await res.json();
         }
     },
     appointments: {
