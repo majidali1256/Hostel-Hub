@@ -120,6 +120,25 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get('view');
+      const hostelIdParam = params.get('hostelId');
+
+      if (hostelIdParam) {
+        setInitialHostelId(hostelIdParam);
+      } else {
+        setSelectedHostel(null);
+        setCurrentView(viewParam ? (viewParam as any) : 'dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Restore selected hostel when hostels data loads
   useEffect(() => {
     if (initialHostelId && hostels.length > 0) {
@@ -147,7 +166,14 @@ const App: React.FC = () => {
     }
     const newSearch = params.toString();
     const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname;
-    window.history.replaceState({ path: newUrl }, '', newUrl);
+    
+    // Only push state if the URL actually changes to avoid infinite loops and duplicate history
+    const currentSearch = window.location.search || '?';
+    const computedSearch = newSearch ? `?${newSearch}` : '?';
+    
+    if (currentSearch !== computedSearch && window.location.pathname + window.location.search !== newUrl) {
+      window.history.pushState({ path: newUrl }, '', newUrl);
+    }
   }, [currentView, selectedHostel]);
 
   const toggleTheme = () => {
