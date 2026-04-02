@@ -67,23 +67,6 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
                     currentUserId={currentUser.id}
                     chatName={chatName || 'Chat'}
                     onClose={() => setSelectedConversationId(null)}
-                    onDelete={async () => {
-                        if (await confirm({
-                            title: 'Delete Conversation',
-                            message: 'Are you sure you want to delete this conversation? This cannot be undone.',
-                            type: 'danger',
-                            confirmText: 'Delete'
-                        })) {
-                            try {
-                                await api.conversations.delete(selectedConversationId);
-                                setConversations(prev => prev.filter(c => c._id !== selectedConversationId));
-                                setSelectedConversationId(null);
-                                toast.showSuccess('Conversation deleted');
-                            } catch (error) {
-                                toast.showError('Failed to delete conversation');
-                            }
-                        }
-                    }}
                 />
             </div>
         );
