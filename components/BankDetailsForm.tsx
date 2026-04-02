@@ -90,7 +90,7 @@ const BankDetailsForm: React.FC = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+        <div className="max-w-2xl mx-auto p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl animate-fade-in-up border border-gray-100 dark:border-gray-700">
             <div className="mb-8 text-center">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                     💳 Bank Account Details
@@ -130,7 +130,7 @@ const BankDetailsForm: React.FC = () => {
                             value={bankDetails.bankName}
                             onChange={handleChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                         >
                             <option value="">Select Bank</option>
                             {PAKISTANI_BANKS.map(bank => (
@@ -151,7 +151,7 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="Account holder name"
                             required
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                         />
                     </div>
 
@@ -167,7 +167,7 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="1234567890123456"
                             required
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                         />
                     </div>
 
@@ -183,7 +183,7 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="PK36SCBL0000001123456702"
                             maxLength={24}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                         />
                         <small className="block mt-1 text-gray-500 dark:text-gray-400 text-sm">
                             24 characters starting with PK
@@ -208,7 +208,7 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="03001234567"
                             pattern="[0-9]{11}"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                         />
                         <small className="block mt-1 text-gray-500 dark:text-gray-400 text-sm">
                             11 digits (e.g., 03001234567)
@@ -227,7 +227,7 @@ const BankDetailsForm: React.FC = () => {
                             onChange={handleChange}
                             placeholder="03001234567"
                             pattern="[0-9]{11}"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                         />
                         <small className="block mt-1 text-gray-500 dark:text-gray-400 text-sm">
                             11 digits (e.g., 03001234567)
@@ -239,7 +239,7 @@ const BankDetailsForm: React.FC = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-xl transition-all duration-200 active:scale-95 shadow-sm shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                     >
                         {loading ? 'Saving...' : 'Save Bank Details'}
                     </button>

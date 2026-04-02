@@ -38,7 +38,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-4 sm:p-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+        <div className="max-w-3xl mx-auto p-4 sm:p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 animate-fade-in-up">
             <div className="text-center mb-8 pb-6 border-b-2 border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                     💰 Payment Instructions
@@ -66,7 +66,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
                 </div>
 
                 {/* Bank Transfer */}
-                <div className="ml-0 sm:ml-14 mb-6 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                <div className="ml-0 sm:ml-14 mb-6 bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl border border-gray-200 dark:border-gray-600">
                     <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
                         🏦 Bank Transfer
                     </h4>
@@ -79,7 +79,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
                                 </span>
                                 <button
                                     onClick={() => copyToClipboard(bankDetails.bankName, 'bank')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-sm transition-colors"
+                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg text-sm transition-all duration-200 active:scale-95 font-medium"
                                 >
                                     {copied === 'bank' ? '✓' : '📋'}
                                 </button>
@@ -94,7 +94,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
                                 </span>
                                 <button
                                     onClick={() => copyToClipboard(bankDetails.accountTitle, 'title')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-sm transition-colors"
+                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg text-sm transition-all duration-200 active:scale-95 font-medium"
                                 >
                                     {copied === 'title' ? '✓' : '📋'}
                                 </button>
@@ -109,7 +109,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
                                 </span>
                                 <button
                                     onClick={() => copyToClipboard(bankDetails.accountNumber, 'account')}
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-sm transition-colors"
+                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg text-sm transition-all duration-200 active:scale-95 font-medium"
                                 >
                                     {copied === 'account' ? '✓' : '📋'}
                                 </button>
@@ -125,7 +125,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
                                     </span>
                                     <button
                                         onClick={() => copyToClipboard(bankDetails.iban!, 'iban')}
-                                        className="px-2 py-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-sm transition-colors"
+                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg text-sm transition-all duration-200 active:scale-95 font-medium"
                                     >
                                         {copied === 'iban' ? '✓' : '📋'}
                                     </button>
@@ -137,7 +137,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
 
                 {/* Mobile Wallets */}
                 {(bankDetails.jazzCashNumber || bankDetails.easyPaisaNumber) && (
-                    <div className="ml-0 sm:ml-14 mb-6 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                    <div className="ml-0 sm:ml-14 mb-6 bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl border border-gray-200 dark:border-gray-600">
                         <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
                             📱 Mobile Wallet
                         </h4>
@@ -208,7 +208,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
                         </p>
                         <button
                             onClick={onUploadReceipt}
-                            className="px-6 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium rounded-lg transition-colors"
+                            className="px-6 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium rounded-xl transition-all duration-200 shadow-sm shadow-green-500/20 hover:-translate-y-0.5 active:scale-95"
                         >
                             📤 Upload Payment Receipt
                         </button>
@@ -216,7 +216,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
                 </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg mb-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl mb-4 border border-blue-100 dark:border-blue-800">
                 <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
                     Need Help?
                 </h4>
@@ -232,7 +232,7 @@ const PaymentInstructions: React.FC<PaymentInstructionsProps> = ({
                 )}
             </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 rounded text-yellow-900 dark:text-yellow-200">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 rounded-xl text-yellow-900 dark:text-yellow-200">
                 <strong>⚠️ Important:</strong> Your booking will be confirmed once the owner verifies your payment receipt (usually within 24 hours).
             </div>
         </div>

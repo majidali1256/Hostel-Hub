@@ -90,27 +90,32 @@ const ReviewList: React.FC<ReviewListProps> = ({ hostelId, currentUserId }) => {
     if (isLoading) {
         return (
             <div className="flex justify-center py-12">
-                <div className="text-gray-500">Loading reviews...</div>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin"></div>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Loading reviews...</p>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{error}</p>
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
             </div>
         );
     }
 
     if (reviews.length === 0) {
         return (
-            <div className="text-center py-12">
-                <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-                <p className="text-gray-600 font-medium">No reviews yet</p>
-                <p className="text-gray-500 text-sm mt-1">Be the first to review this hostel!</p>
+            <div className="text-center py-12 animate-fade-in">
+                <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 font-medium">No reviews yet</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Be the first to review this hostel!</p>
             </div>
         );
     }
@@ -121,7 +126,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ hostelId, currentUserId }) => {
                 const isHelpful = currentUserId && review.helpfulVotes.includes(currentUserId);
 
                 return (
-                    <div key={review._id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                    <div key={review._id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-md transition-all duration-200 animate-stagger-in">
                         {/* Header */}
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
@@ -129,10 +134,10 @@ const ReviewList: React.FC<ReviewListProps> = ({ hostelId, currentUserId }) => {
                                     {review.reviewerId.firstName[0]}{review.reviewerId.lastName[0]}
                                 </div>
                                 <div>
-                                    <h4 className="font-semibold text-gray-900">
+                                    <h4 className="font-semibold text-gray-900 dark:text-white">
                                         {review.reviewerId.firstName} {review.reviewerId.lastName}
                                     </h4>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
                                         {format(new Date(review.createdAt), 'MMMM d, yyyy')}
                                     </p>
                                 </div>
@@ -141,14 +146,14 @@ const ReviewList: React.FC<ReviewListProps> = ({ hostelId, currentUserId }) => {
                         </div>
 
                         {/* Title */}
-                        <h3 className="font-bold text-lg text-gray-900 mb-2">{review.title}</h3>
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{review.title}</h3>
 
                         {/* Comment */}
-                        <p className="text-gray-700 mb-4">{review.comment}</p>
+                        <p className="text-gray-700 dark:text-gray-300 mb-4">{review.comment}</p>
 
                         {/* Detailed Ratings */}
                         {(review.cleanliness || review.accuracy || review.communication || review.location || review.value) && (
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 p-4 bg-gray-50 rounded-lg">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600">
                                 {review.cleanliness && (
                                     <div className="text-center">
                                         <p className="text-xs text-gray-600 mb-1">Cleanliness</p>
@@ -184,17 +189,17 @@ const ReviewList: React.FC<ReviewListProps> = ({ hostelId, currentUserId }) => {
 
                         {/* Owner Response */}
                         {review.response && (
-                            <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
                                     </svg>
-                                    <p className="font-semibold text-blue-900">
+                                    <p className="font-semibold text-blue-900 dark:text-blue-200">
                                         Response from {review.response.responderId.firstName}
                                     </p>
                                 </div>
-                                <p className="text-blue-800">{review.response.content}</p>
-                                <p className="text-xs text-blue-600 mt-2">
+                                <p className="text-blue-800 dark:text-blue-300">{review.response.content}</p>
+                                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                                     {format(new Date(review.response.respondedAt), 'MMMM d, yyyy')}
                                 </p>
                             </div>
@@ -205,9 +210,9 @@ const ReviewList: React.FC<ReviewListProps> = ({ hostelId, currentUserId }) => {
                             <div className="mt-4 flex items-center gap-2">
                                 <button
                                     onClick={() => handleHelpful(review._id)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isHelpful
-                                        ? 'bg-blue-100 text-blue-700'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 active:scale-95 ${isHelpful
+                                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                         }`}
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

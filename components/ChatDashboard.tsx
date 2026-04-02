@@ -73,18 +73,19 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
     }
 
     return (
-        <div className="max-w-4xl mx-auto h-[calc(100vh-100px)] bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+        <div className="max-w-4xl mx-auto h-[calc(100vh-100px)] bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col animate-fade-in-up">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">Messages</h2>
             </div>
 
             {isLoading ? (
-                <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
-                    Loading conversations...
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 gap-3">
+                    <div className="w-10 h-10 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin"></div>
+                    <p className="font-medium">Loading conversations...</p>
                 </div>
             ) : conversations.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 p-8 text-center">
-                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 p-8 text-center animate-fade-in">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-full flex items-center justify-center mb-4">
                         <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
@@ -115,9 +116,9 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
                                         }
                                     }
                                 }}
-                                className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors flex items-center gap-4 ${isSelected ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}
+                            className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-all duration-200 flex items-center gap-4 group ${isSelected ? 'bg-blue-50 dark:bg-blue-900/10 border-l-4 border-l-blue-500' : ''}`}
                             >
-                                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-lg relative">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-lg relative shadow-sm">
                                     {otherParticipant?.firstName?.[0] || '?'}
                                     {conv.unreadCount > 0 && (
                                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center border-2 border-white dark:border-gray-800">
@@ -165,7 +166,7 @@ const ChatDashboard: React.FC<ChatDashboardProps> = ({ currentUser, initialConve
                                             }
                                         }
                                     }}
-                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 active:scale-90"
                                     title="Delete conversation"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

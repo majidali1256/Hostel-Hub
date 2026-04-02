@@ -123,8 +123,11 @@ const BookingHistory: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="text-lg">Loading your bookings...</div>
+            <div className="flex justify-center items-center min-h-[50vh]">
+                <div className="flex flex-col items-center gap-3 animate-pulse">
+                    <div className="w-12 h-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin"></div>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Loading your bookings...</p>
+                </div>
             </div>
         );
     }
@@ -132,12 +135,12 @@ const BookingHistory: React.FC = () => {
     if (error) {
         return (
             <div className="max-w-7xl mx-auto p-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                    <h2 className="text-2xl font-bold text-red-800 mb-2">Error</h2>
-                    <p className="text-red-600 mb-4">{error}</p>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center animate-fade-in">
+                    <h2 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-2">Error</h2>
+                    <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
                     <button
                         onClick={fetchBookings}
-                        className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition"
+                        className="bg-red-600 text-white px-6 py-2.5 rounded-xl hover:bg-red-700 transition-all duration-200 font-medium shadow-sm shadow-red-500/20 active:scale-95"
                     >
                         Try Again
                     </button>
@@ -149,18 +152,18 @@ const BookingHistory: React.FC = () => {
     const filteredBookings = filterBookings();
 
     return (
-        <div className="max-w-7xl mx-auto p-6">
-            <h1 className="text-3xl font-bold mb-6">📚 My Bookings</h1>
+        <div className="max-w-7xl mx-auto p-6 animate-fade-in">
+            <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">📚 My Bookings</h1>
 
             {/* Filter Tabs */}
-            <div className="flex gap-2 mb-6 overflow-x-auto">
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
                 {['all', 'upcoming', 'past', 'cancelled'].map(f => (
                     <button
                         key={f}
                         onClick={() => setFilter(f as any)}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${filter === f
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${filter === f
+                            ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                     >
                         {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -171,25 +174,25 @@ const BookingHistory: React.FC = () => {
 
             {/* Bookings List */}
             {filteredBookings.length === 0 ? (
-                <div className="bg-gray-50 p-12 rounded-lg text-center">
-                    <p className="text-gray-500 text-lg">No bookings found</p>
+                <div className="bg-gray-50 dark:bg-gray-800 p-12 rounded-2xl text-center border border-gray-200 dark:border-gray-700 animate-fade-in">
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">No bookings found</p>
                 </div>
             ) : (
                 <div className="grid gap-4">
-                    {filteredBookings.map(booking => (
-                        <div key={booking._id} className="bg-white border rounded-lg p-6 shadow-sm hover:shadow-md transition">
+                    {filteredBookings.map((booking, index) => (
+                        <div key={booking._id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 animate-stagger-in" style={{ animationDelay: `${Math.min(index * 0.05, 0.3)}s` }}>
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex gap-4">
                                     {booking.hostelId.images && booking.hostelId.images[0] && (
                                         <img
                                             src={booking.hostelId.images[0]}
                                             alt={booking.hostelId.name}
-                                            className="w-24 h-24 object-cover rounded-lg"
+                                            className="w-24 h-24 object-cover rounded-xl"
                                         />
                                     )}
                                     <div>
-                                        <h3 className="text-xl font-semibold">{booking.hostelId.name}</h3>
-                                        <p className="text-gray-600">{booking.hostelId.location}</p>
+                                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{booking.hostelId.name}</h3>
+                                        <p className="text-gray-600 dark:text-gray-400">{booking.hostelId.location}</p>
                                         <div className="flex gap-2 mt-2">
                                             <span className={`text-xs px-3 py-1 rounded-full border ${getStatusColor(booking.status)}`}>
                                                 {booking.status}
@@ -201,19 +204,19 @@ const BookingHistory: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-2xl font-bold text-green-600">
+                                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                                         PKR {booking.totalPrice.toLocaleString()}
                                     </div>
-                                    <div className="text-sm text-gray-500 mt-1">
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                         {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm border-t pt-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm border-t border-gray-200 dark:border-gray-700 pt-4">
                                 <div>
-                                    <span className="text-gray-500">Guests:</span>
-                                    <p className="font-medium">{booking.numberOfGuests}</p>
+                                    <span className="text-gray-500 dark:text-gray-400">Guests:</span>
+                                    <p className="font-medium text-gray-900 dark:text-white">{booking.numberOfGuests}</p>
                                 </div>
                                 {booking.paymentMethod && (
                                     <div>
@@ -303,8 +306,8 @@ const BookingHistory: React.FC = () => {
 
             {/* Receipt Modal */}
             {showReceiptModal && selectedBooking && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in border border-gray-100 dark:border-gray-700">
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <h2 className="text-2xl font-bold">Payment Receipt</h2>
@@ -355,8 +358,8 @@ const BookingHistory: React.FC = () => {
 
             {/* Payment Modal */}
             {showPaymentModal && selectedBooking && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in border border-gray-100 dark:border-gray-700">
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <div>

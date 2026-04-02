@@ -676,6 +676,14 @@ app.post('/api/hostels', authMiddleware, roleMiddleware('owner', 'admin'), hoste
 
         hostelData.ownerId = req.userId;
 
+        // Parse coordinates if provided
+        if (req.body.longitude && req.body.latitude) {
+            hostelData.coordinates = {
+                type: 'Point',
+                coordinates: [parseFloat(req.body.longitude), parseFloat(req.body.latitude)]
+            };
+        }
+
         // Auto-verify hostel if owner is verified (100% trust score)
         const owner = await User.findById(req.userId);
         if (owner) {

@@ -84,16 +84,16 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={onCancel}></div>
-            <div className="relative bg-white dark:bg-gray-800 rounded-xl p-8 max-w-lg w-11/12 max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel}></div>
+            <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in border border-gray-100 dark:border-gray-700">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                         📤 Upload Payment Receipt
                     </h2>
                     <button
                         onClick={onCancel}
-                        className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 w-8 h-8 flex items-center justify-center rounded transition-colors text-3xl"
+                        className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 text-2xl active:scale-90"
                     >
                         ×
                     </button>
@@ -115,7 +115,7 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                             value={paymentMethod}
                             onChange={(e) => setPaymentMethod(e.target.value)}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                         >
                             <option value="">Select payment method</option>
                             <option value="bank_transfer">Bank Transfer</option>
@@ -135,7 +135,7 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                             value={transactionId}
                             onChange={(e) => setTransactionId(e.target.value)}
                             placeholder="Enter transaction reference number"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white bg-white dark:bg-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                         />
                         <small className="block mt-1 text-gray-500 dark:text-gray-400 text-sm">
                             If available on your receipt
@@ -146,7 +146,7 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                         <label htmlFor="receipt" className="block mb-2 text-gray-700 dark:text-gray-300 font-medium">
                             Payment Receipt/Screenshot *
                         </label>
-                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 rounded-lg p-8 text-center transition-colors">
+                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 rounded-xl p-8 text-center transition-all duration-200 group bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10">
                             {previewUrl ? (
                                 <div>
                                     <img
@@ -160,16 +160,16 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                                             setReceiptImage('');
                                             setPreviewUrl('');
                                         }}
-                                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white rounded-md text-sm transition-colors"
+                                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white rounded-xl text-sm transition-all duration-200 active:scale-95 shadow-sm"
                                     >
                                         Change Image
                                     </button>
                                 </div>
                             ) : (
                                 <label htmlFor="receipt" className="cursor-pointer block">
-                                    <div className="text-5xl mb-2">📷</div>
+                                    <div className="text-5xl mb-2 group-hover:scale-110 transition-transform duration-300">📷</div>
                                     <div className="text-gray-700 dark:text-gray-300 mb-1">
-                                        <strong>Click to upload</strong> or drag and drop
+                                        <strong className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Click to upload</strong> or drag and drop
                                     </div>
                                     <div className="text-gray-500 dark:text-gray-400 text-sm">
                                         PNG, JPG up to 5MB
@@ -186,7 +186,7 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                         </div>
                     </div>
 
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded mb-6">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-xl mb-6 shadow-sm">
                         <strong className="block text-blue-800 dark:text-blue-200 mb-2">
                             💡 Tips for a clear receipt:
                         </strong>
@@ -202,14 +202,14 @@ const PaymentReceiptUpload: React.FC<PaymentReceiptUploadProps> = ({
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors"
+                            className="px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-all duration-200 active:scale-95"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+                            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-xl transition-all duration-200 active:scale-95 shadow-sm shadow-blue-500/20"
                         >
                             {loading ? 'Uploading...' : 'Submit Receipt'}
                         </button>

@@ -175,26 +175,26 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpSubmit }) => {
     return (
         <div className="h-screen flex overflow-hidden bg-white dark:bg-[#0a0a0a] transition-colors duration-500 font-sans">
             {/* Left Side - Branding Panel (60% width) - Pure White */}
-            <div className="hidden lg:flex lg:w-[60%] relative overflow-hidden bg-white dark:bg-[#0a0a0a]">
+            <div className="hidden lg:flex lg:w-[60%] relative overflow-hidden bg-white dark:bg-[#0a0a0a] animate-fade-in">
                 {/* Content Container - Centered */}
                 <div className="relative z-10 flex flex-col justify-center items-center w-full h-full p-16">
                     {/* Large Hero Icon */}
                     <div className="mb-8 flex flex-col items-center group cursor-default">
-                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-10 rounded-[2.5rem] shadow-2xl shadow-blue-500/25 dark:shadow-blue-500/40 transition-all duration-500 group-hover:scale-105 group-hover:shadow-blue-500/40 group-hover:-translate-y-2">
+                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-10 rounded-[2.5rem] shadow-2xl shadow-blue-500/25 dark:shadow-blue-500/40 transition-all duration-500 group-hover:scale-105 group-hover:shadow-blue-500/40 group-hover:-translate-y-2 animate-float">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-28 w-28 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                             </svg>
                         </div>
-                        <h1 className="mt-8 text-5xl font-extrabold tracking-tight text-blue-600 dark:text-blue-500">
+                        <h1 className="mt-8 text-5xl font-extrabold tracking-tight text-blue-600 dark:text-blue-500 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                             HostelHub
                         </h1>
-                        <p className="mt-4 text-xl text-gray-500 dark:text-gray-400 font-light tracking-wide">
+                        <p className="mt-4 text-xl text-gray-500 dark:text-gray-400 font-light tracking-wide animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                             Home, away from Home.
                         </p>
                     </div>
 
                     {/* Minimalist Feature Tags */}
-                    <div className="flex flex-wrap justify-center gap-4 mt-10">
+                    <div className="flex flex-wrap justify-center gap-4 mt-10 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
                         {[
                             { title: 'Home For Students', icon: 'M12 14l9-5-9-5-9 5 9 5z' },
                             { title: 'Verified Listing', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
@@ -216,7 +216,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpSubmit }) => {
             {/* Right Side - Login Form (40% width) */}
             <div className="w-full lg:w-[40%] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative bg-gray-50 dark:bg-[#0a0a0a] overflow-hidden">
                 {/* Elevated Card Container */}
-                <div className="w-full max-w-[400px] bg-white dark:bg-gray-900 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-black/50 p-5 sm:p-6 border border-gray-100 dark:border-gray-800">
+                <div className="w-full max-w-[400px] bg-white dark:bg-gray-900 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-black/50 p-5 sm:p-6 border border-gray-100 dark:border-gray-800 animate-scale-in">
                     {/* Mobile Logo */}
                     <div className="lg:hidden flex flex-col items-center mb-4">
                         <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/30 mb-2">

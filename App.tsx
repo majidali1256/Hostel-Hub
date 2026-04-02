@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
 import { User, Hostel } from './types';
 import { SpinnerIcon } from './components/icons/SpinnerIcon';
+import AppLoadingScreen from './components/App_LoadingScreen';
 import { api } from './services/mongoService';
 import { useSocket } from './contexts/SocketContext';
 import { useToast } from './contexts/ToastContext';
@@ -41,10 +42,14 @@ const SearchFilters = React.lazy(() => import('./components/SearchFilters'));
 const HostelMap = React.lazy(() => import('./components/HostelMap'));
 const AIRecommendations = React.lazy(() => import('./components/AIRecommendations'));
 
-// Loading component
+// Loading component with smooth animation
 const LoadingFallback = () => (
-  <div className="flex justify-center items-center h-full min-h-[200px]">
-    <SpinnerIcon className="w-8 h-8 text-blue-600 animate-spin" />
+  <div className="flex flex-col justify-center items-center h-full min-h-[200px] animate-fade-in">
+    <div className="relative">
+      <div className="w-10 h-10 border-[3px] border-gray-200 dark:border-gray-700 rounded-full"></div>
+      <div className="absolute inset-0 w-10 h-10 border-[3px] border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+    </div>
+    <p className="mt-4 text-sm text-gray-400 dark:text-gray-500 font-medium">Loading...</p>
   </div>
 );
 
@@ -747,11 +752,7 @@ const App: React.FC = () => {
   }, [filteredHostels, sortOption]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <SpinnerIcon />
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
   if (!user) {
@@ -842,7 +843,7 @@ const App: React.FC = () => {
   const renderDashboard = () => (
     <>
       {/* Search Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-gray-100 dark:border-gray-700 transition-colors">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-gray-100 dark:border-gray-700 transition-colors animate-fade-in-up">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">
           🔍 Find Your Perfect Hostel
         </h1>
@@ -945,16 +946,16 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300">
       {isMenuOpen && <Sidebar user={user} onLogout={handleLogout} onNavigate={handleNavigate} onClose={() => setIsMenuOpen(false)} />}
 
       <main className="p-4 md:p-8">
-        <header className="relative flex items-center justify-between mb-8 h-16">
+        <header className="relative flex items-center justify-between mb-8 h-16 animate-fade-in-down">
           {/* Left: Menu + Page Title */}
           <div className="flex items-center gap-4 z-10">
             <button
               onClick={() => setIsMenuOpen(true)}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0 active:scale-90"
               aria-label="Open menu"
             >
               <MenuIcon />
@@ -964,7 +965,7 @@ const App: React.FC = () => {
 
           {/* Center: Logo + App Name */}
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2 sm:gap-3">
-            <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg shadow-md">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 sm:p-2 rounded-lg shadow-lg shadow-blue-500/20 dark:shadow-blue-500/30 transition-transform duration-300 hover:scale-105">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
@@ -988,17 +989,19 @@ const App: React.FC = () => {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <Suspense fallback={<LoadingFallback />}>
-          <PropertyListingForm
-            onSubmit={handleSaveHostel}
-            onCancel={() => setIsModalOpen(false)}
-            initialData={editingHostel}
-          />
+          <div className="animate-fade-in-up">
+            <PropertyListingForm
+              onSubmit={handleSaveHostel}
+              onCancel={() => setIsModalOpen(false)}
+              initialData={editingHostel}
+            />
+          </div>
         </Suspense>
       </Modal>
 
       {isBookingModalOpen && bookingHostel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in border border-gray-100 dark:border-gray-700">
             <Suspense fallback={<LoadingFallback />}>
               <BookingForm
                 hostel={bookingHostel}

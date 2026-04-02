@@ -5,18 +5,83 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hostel Hub</title>
+  <meta name="description" content="Hostel Hub - Find your perfect hostel with AI-powered search, verified listings, and instant booking." />
+  <title>Hostel Hub - Home, Away from Home</title>
+  
+  <!-- Google Fonts: Inter for professional typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
           colors: {
             'deep-charcoal': '#1a1a1a',
             'navy-black': '#0a0a0a',
-            'azure': '#007AFF', // Vibrant Azure
-          }
+            'azure': '#007AFF',
+          },
+          animation: {
+            'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
+            'fade-in-down': 'fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
+            'fade-in': 'fadeIn 0.4s ease-out both',
+            'scale-in': 'scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both',
+            'slide-in-left': 'slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
+            'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
+            'shimmer': 'shimmer 1.8s infinite',
+            'pulse-ring': 'pulseRing 2s infinite',
+            'float': 'float 3s ease-in-out infinite',
+            'stagger-in': 'staggerIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
+          },
+          keyframes: {
+            fadeInUp: {
+              from: { opacity: '0', transform: 'translateY(24px)' },
+              to: { opacity: '1', transform: 'translateY(0)' },
+            },
+            fadeInDown: {
+              from: { opacity: '0', transform: 'translateY(-16px)' },
+              to: { opacity: '1', transform: 'translateY(0)' },
+            },
+            fadeIn: {
+              from: { opacity: '0' },
+              to: { opacity: '1' },
+            },
+            scaleIn: {
+              from: { opacity: '0', transform: 'scale(0.92)' },
+              to: { opacity: '1', transform: 'scale(1)' },
+            },
+            slideInLeft: {
+              from: { opacity: '0', transform: 'translateX(-100%)' },
+              to: { opacity: '1', transform: 'translateX(0)' },
+            },
+            slideInRight: {
+              from: { opacity: '0', transform: 'translateX(32px)' },
+              to: { opacity: '1', transform: 'translateX(0)' },
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' },
+            },
+            pulseRing: {
+              '0%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.5)' },
+              '80%': { boxShadow: '0 0 0 8px rgba(239, 68, 68, 0)' },
+              '100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            },
+            staggerIn: {
+              from: { opacity: '0', transform: 'translateY(16px) scale(0.97)' },
+              to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+            },
+          },
         }
       }
     }
@@ -38,7 +103,7 @@
   <link rel="stylesheet" href="/index.css">
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900">
+<body class="bg-gray-50 dark:bg-gray-900 font-sans antialiased">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

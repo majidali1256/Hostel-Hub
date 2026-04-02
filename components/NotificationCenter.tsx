@@ -138,29 +138,35 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
     if (isLoading) {
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="bg-white rounded-2xl p-8">
-                    <div className="text-gray-500">Loading notifications...</div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 animate-scale-in shadow-2xl">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative">
+                            <div className="w-8 h-8 border-[3px] border-gray-200 dark:border-gray-700 rounded-full"></div>
+                            <div className="absolute inset-0 w-8 h-8 border-[3px] border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+                        </div>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Loading notifications...</p>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col animate-scale-in border border-gray-100 dark:border-gray-700">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between items-center mb-4">
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Notifications</h2>
-                            <p className="text-sm text-gray-600">{unreadCount} unread</p>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{unreadCount} unread</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all duration-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
@@ -170,18 +176,18 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setFilter('all')}
-                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'all'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${filter === 'all'
+                                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
                             All
                         </button>
                         <button
                             onClick={() => setFilter('unread')}
-                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'unread'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${filter === 'unread'
+                                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
                             Unread ({unreadCount})
@@ -189,7 +195,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                         {unreadCount > 0 && (
                             <button
                                 onClick={markAllAsRead}
-                                className="ml-auto px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                                className="ml-auto px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
                             >
                                 Mark all as read
                             </button>
@@ -200,19 +206,22 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                 {/* Notifications List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
                     {notifications.length === 0 ? (
-                        <div className="text-center py-12">
-                            <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            <p className="text-gray-600 font-medium">No notifications</p>
-                            <p className="text-gray-500 text-sm mt-1">You're all caught up!</p>
+                        <div className="text-center py-12 animate-fade-in">
+                            <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                                <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-300 font-medium">No notifications</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">You're all caught up!</p>
                         </div>
                     ) : (
-                        notifications.map((notification) => (
+                        notifications.map((notification, index) => (
                             <div
                                 key={notification._id}
-                                className={`p-4 rounded-lg border-l-4 ${getPriorityColor(notification.priority)} ${notification.read ? 'bg-white' : 'bg-blue-50'
-                                    } hover:shadow-md transition-shadow cursor-pointer`}
+                                className={`p-4 rounded-xl border-l-4 ${getPriorityColor(notification.priority)} ${notification.read ? 'bg-white dark:bg-gray-800' : 'bg-blue-50 dark:bg-blue-900/20'
+                                    } hover:shadow-md transition-all duration-200 cursor-pointer animate-stagger-in`}
+                                style={{ animationDelay: `${Math.min(index * 0.05, 0.3)}s` }}
                                 onClick={() => !notification.read && markAsRead(notification._id)}
                             >
                                 <div className="flex items-start gap-3">
@@ -220,9 +229,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                                     <div className="flex-1">
                                         <div className="flex items-start justify-between">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900">{notification.title}</h4>
-                                                <p className="text-sm text-gray-700 mt-1">{notification.message}</p>
-                                                <p className="text-xs text-gray-500 mt-2">
+                                                <h4 className="font-semibold text-gray-900 dark:text-white">{notification.title}</h4>
+                                                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{notification.message}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                                     {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                                                 </p>
                                             </div>
@@ -231,9 +240,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                                                     e.stopPropagation();
                                                     deleteNotification(notification._id);
                                                 }}
-                                                className="text-gray-400 hover:text-red-600 transition-colors"
+                                                className="text-gray-400 hover:text-red-500 transition-all duration-200 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90"
                                             >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
                                             </button>
@@ -241,7 +250,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
                                         {notification.actionUrl && (
                                             <a
                                                 href={notification.actionUrl}
-                                                className="inline-block mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                                                className="inline-block mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 View details →

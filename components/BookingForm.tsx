@@ -138,8 +138,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in border border-gray-100 dark:border-gray-700">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between items-start">
                         <div>
@@ -148,7 +148,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all duration-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -159,8 +159,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {error && (
-                        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
-                            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl animate-fade-in">
+                            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
                         </div>
                     )}
 
@@ -176,7 +176,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                                 onChange={(e) => setCheckIn(e.target.value)}
                                 min={tomorrow}
                                 required
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 outline-none"
                             />
                         </div>
 
@@ -191,7 +191,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
                                 onChange={(e) => setCheckOut(e.target.value)}
                                 min={checkIn || tomorrow}
                                 required
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 outline-none"
                             />
                         </div>
                     </div>
@@ -230,7 +230,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ hostel, onSubmit, onClose }) 
 
                     {/* Price Summary */}
                     {duration > 0 && (
-                        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-xl p-4 animate-fade-in-up">
                             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Booking Summary</h3>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">

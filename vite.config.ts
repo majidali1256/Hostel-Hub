@@ -7,9 +7,20 @@ export default defineConfig(({ mode }) => {
   process.env.BROWSER = 'safari'; // Attempt to force Safari
   return {
     server: {
-      port: 3001,
+      port: 5001,
       host: true, // Listen on all addresses (0.0.0.0)
       open: false, // Disable auto-open in Docker
+      proxy: {
+        '/api': {
+          target: 'http://localhost:5002',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/socket.io': {
+          target: 'http://localhost:5002',
+          ws: true,
+        }
+      }
     },
     plugins: [react()],
     define: {

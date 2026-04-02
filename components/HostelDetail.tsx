@@ -6,6 +6,7 @@ import FairnessBadge from './FairnessBadge';
 import TrustBadge from './TrustBadge';
 import AppointmentScheduler from './AppointmentScheduler';
 import ReviewsModal from './ReviewsModal';
+import HostelDetailMap from './HostelDetailMap';
 
 interface HostelDetailProps {
     hostel: Hostel;
@@ -160,26 +161,26 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
     }, [isLightboxOpen]);
 
     return (
-        <div className="max-w-5xl mx-auto">
-            <button onClick={onBack} className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-semibold mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="max-w-5xl mx-auto animate-fade-in">
+            <button onClick={onBack} className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-semibold mb-4 transition-all duration-200 hover:-translate-x-1 active:scale-95 group">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 Back to Listings
             </button>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in-up">
                 {/* Image Gallery */}
                 <div className="grid grid-cols-1 md:grid-cols-2">
-                    <div className="p-4 cursor-pointer" onClick={() => openLightbox(images.indexOf(mainImage))}>
-                        <img src={mainImage} alt={hostel.name} className="w-full h-96 object-cover rounded-lg hover:opacity-95 transition-opacity" />
-                        <p className="text-center text-sm text-gray-500 mt-2">Click to view full screen</p>
+                    <div className="p-4 cursor-pointer group" onClick={() => openLightbox(images.indexOf(mainImage))}>
+                        <img src={mainImage} alt={hostel.name} className="w-full h-96 object-cover rounded-xl hover:opacity-95 transition-all duration-300 group-hover:shadow-lg" />
+                        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">Click to view full screen</p>
                     </div>
                     <div className="p-4 grid grid-cols-4 gap-1 overflow-y-auto max-h-96 content-start">
                         {images.map((img, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => setMainImage(img)}
-                                className={`relative block w-full aspect-square focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-700 ${mainImage === img ? 'ring-2 ring-blue-500' : ''}`}
+                                className={`relative block w-full aspect-square focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 transition-all duration-200 hover:opacity-80 ${mainImage === img ? 'ring-2 ring-blue-500 scale-95' : 'hover:scale-95'}`}
                             >
                                 <img src={img} alt={`${hostel.name} view ${idx + 1}`} className="w-full h-full object-cover" />
                             </button>
@@ -189,27 +190,27 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
 
                 {/* Lightbox Overlay */}
                 {isLightboxOpen && (
-                    <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4" onClick={closeLightbox}>
-                        <button className="absolute top-4 right-4 text-white hover:text-gray-300 focus:outline-none" onClick={closeLightbox}>
+                    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={closeLightbox}>
+                        <button className="absolute top-4 right-4 text-white/80 hover:text-white focus:outline-none transition-all duration-200 p-2 rounded-full hover:bg-white/10 active:scale-90 z-10" onClick={closeLightbox}>
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
 
-                        <button className="absolute left-4 text-white hover:text-gray-300 focus:outline-none hidden md:block" onClick={prevImage}>
+                        <button className="absolute left-4 text-white/80 hover:text-white focus:outline-none hidden md:block p-2 rounded-full hover:bg-white/10 transition-all duration-200 active:scale-90" onClick={prevImage}>
                             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                         </button>
 
                         <img
                             src={images[lightboxIndex] || defaultImage}
                             alt={`Full screen view ${lightboxIndex + 1}`}
-                            className="max-h-[90vh] max-w-[90vw] object-contain"
+                            className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg animate-scale-in"
                             onClick={(e) => e.stopPropagation()}
                         />
 
-                        <button className="absolute right-4 text-white hover:text-gray-300 focus:outline-none hidden md:block" onClick={nextImage}>
+                        <button className="absolute right-4 text-white/80 hover:text-white focus:outline-none hidden md:block p-2 rounded-full hover:bg-white/10 transition-all duration-200 active:scale-90" onClick={nextImage}>
                             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
 
-                        <div className="absolute bottom-4 left-0 right-0 text-center text-white text-sm">
+                        <div className="absolute bottom-4 left-0 right-0 text-center text-white/80 text-sm font-medium">
                             {lightboxIndex + 1} / {images.length || 1}
                         </div>
                     </div>
@@ -278,7 +279,7 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                         <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-3">Amenities</h2>
                         <div className="flex flex-wrap gap-3">
                             {hostel.amenities.map(amenity => (
-                                <span key={amenity} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium px-3 py-1.5 rounded-full capitalize">{amenity}</span>
+                                <span key={amenity} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium px-3 py-1.5 rounded-full capitalize border border-gray-200 dark:border-gray-600 shadow-sm transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800">{amenity}</span>
                             ))}
                         </div>
                     </div>
@@ -286,7 +287,7 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                     {/* Actions Section */}
                     <div className="border-t dark:border-gray-700 pt-6">
                         {!isOwner && (
-                            <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+                            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
                                 <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-4">Owner Information & Your Stay</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {owner ? (
@@ -391,6 +392,27 @@ const HostelDetail: React.FC<HostelDetailProps> = ({ hostel, user, owner, onBack
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* Location / Google Map */}
+                    <div className="border-t dark:border-gray-700 mt-8 pt-8 mb-4">
+                        <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-3">Location</h2>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm flex items-center">
+                            <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            {hostel.location}
+                        </p>
+                        <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
+                            {hostel.coordinates?.coordinates ? (
+                                <HostelDetailMap 
+                                    coordinates={hostel.coordinates.coordinates as [number, number]} 
+                                    hostelName={hostel.name} 
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                    <p className="text-gray-500 dark:text-gray-400">Map coordinates not available for this hostel.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

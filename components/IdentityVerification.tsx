@@ -73,10 +73,15 @@ const IdentityVerification: React.FC = () => {
     // Check if user can upload documents
     const canUpload = !status || status.status === 'unverified' || status.status === 'rejected';
 
-    if (loading) return <div className="p-4 text-center dark:text-gray-300">Loading verification status...</div>;
+    if (loading) return (
+        <div className="p-8 text-center dark:text-gray-300">
+            <div className="w-8 h-8 mx-auto rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin mb-3"></div>
+            <p className="font-medium">Loading verification status...</p>
+        </div>
+    );
 
     return (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8 animate-fade-in-up">
             <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">📋 Identity Verification</h2>
 
             <div className="mb-6">
@@ -97,7 +102,7 @@ const IdentityVerification: React.FC = () => {
                 )}
 
                 {status?.status === 'rejected' && (
-                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800 mb-4">
+                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800 mb-4 animate-fade-in">
                         <p className="font-semibold text-red-800 dark:text-red-200">Verification Rejected</p>
                         <p className="text-red-600 dark:text-red-300">{status.rejectionReason}</p>
                         <p className="text-sm mt-2 text-red-500 dark:text-red-400">Please upload a valid document (CNIC or Student Card).</p>
@@ -121,7 +126,7 @@ const IdentityVerification: React.FC = () => {
                                 value={documentName}
                                 onChange={(e) => setDocumentName(e.target.value)}
                                 placeholder="e.g., CNIC, Student ID, Passport"
-                                className="w-full sm:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full sm:w-64 px-4 py-2.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 outline-none"
                             />
                         </div>
 
@@ -132,12 +137,13 @@ const IdentityVerification: React.FC = () => {
                                 accept="image/*,.pdf"
                                 onChange={handleFileChange}
                                 className="block w-full text-sm text-gray-500 dark:text-gray-400
-                                    file:mr-4 file:py-2 file:px-4
-                                    file:rounded-full file:border-0
+                                    file:mr-4 file:py-2.5 file:px-5
+                                    file:rounded-xl file:border-0
                                     file:text-sm file:font-semibold
                                     file:bg-blue-50 file:text-blue-700
                                     hover:file:bg-blue-100
                                     dark:file:bg-gray-700 dark:file:text-gray-300
+                                    file:transition-all file:duration-200 file:cursor-pointer
                                 "
                             />
                             <Button

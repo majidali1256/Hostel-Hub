@@ -86,14 +86,14 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       {/* Header and role switch */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8 animate-fade-in-up">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-5">
             <div className="relative group">
               {user.profilePicture ? (
-                <img src={user.profilePicture} alt="Profile" className="h-20 w-20 rounded-full object-cover" />
+                <img src={user.profilePicture} alt="Profile" className="h-20 w-20 rounded-full object-cover ring-4 ring-blue-500/20" />
               ) : (
-                <div className="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-300 text-2xl flex-shrink-0">
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center font-bold text-white text-2xl flex-shrink-0 shadow-lg shadow-blue-500/20">
                   {(user.firstName || user.username).charAt(0).toUpperCase()}
                 </div>
               )}
@@ -149,7 +149,7 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
 
       {/* Trust Score Card - For Owners Only */}
       {user.role === 'owner' && trustScore && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200">Trust Score</h2>
             <div className="text-right">
@@ -163,11 +163,11 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
             </div>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-6">
+          <div className="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700 mb-6 overflow-hidden">
             <div
-              className={`h-2.5 rounded-full ${trustScore.score >= 90 ? 'bg-green-600' :
-                trustScore.score >= 70 ? 'bg-blue-600' :
-                  trustScore.score >= 50 ? 'bg-yellow-600' : 'bg-red-600'
+              className={`h-3 rounded-full transition-all duration-1000 ease-out ${trustScore.score >= 90 ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                trustScore.score >= 70 ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
+                  trustScore.score >= 50 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-red-400 to-red-600'
                 }`}
               style={{ width: `${trustScore.score}%` }}
             ></div>
@@ -203,7 +203,7 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
       )}
 
       {/* User Details Card */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
         <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">Contact Information</h2>
         {isEditing ? (
           <form onSubmit={handleSave} className="space-y-4">
@@ -266,8 +266,8 @@ const Profile: React.FC<ProfileProps> = ({ user, allHostels, onSwitchRole, onUpd
                 <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">My Hostel Listings ({userHostels.length})</h2>
                 {userHostels.length > 0 ? (
                   <ul className="space-y-4">
-                    {userHostels.map(hostel => (
-                      <li key={hostel.id} className="p-4 border dark:border-gray-700 rounded-lg flex justify-between items-center">
+                      {userHostels.map((hostel, index) => (
+                      <li key={hostel.id} className="p-4 border dark:border-gray-700 rounded-xl flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 animate-stagger-in" style={{ animationDelay: `${index * 0.05}s` }}>
                         <div>
                           <p className="font-semibold text-gray-800 dark:text-white">{hostel.name}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">{hostel.location}</p>

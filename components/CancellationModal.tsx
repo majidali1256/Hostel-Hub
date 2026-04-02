@@ -25,8 +25,8 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ isOpen, onClose, 
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-scale-in border border-gray-100 dark:border-gray-700">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
                     Cancel Booking
                 </h2>
@@ -42,7 +42,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ isOpen, onClose, 
                             Reason for Cancellation <span className="text-red-500">*</span>
                         </label>
                         <textarea
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                             rows={3}
                             placeholder={isOwner ? "e.g., Maintenance required, Double booking..." : "e.g., Change of plans, Found another place..."}
                             value={reason}
@@ -58,7 +58,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ isOpen, onClose, 
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-all duration-200 active:scale-95"
                             disabled={isLoading}
                         >
                             Keep Booking

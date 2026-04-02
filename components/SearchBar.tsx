@@ -15,6 +15,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -85,7 +86,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
         </div>
         {aiEnabled && (
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <span className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-1 rounded-full font-semibold">
+            <span className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-1 rounded-full font-semibold shadow-sm">
               🤖 AI
             </span>
           </div>
@@ -94,15 +95,19 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
           type="text"
           value={query}
           onChange={(e) => handleQueryChange(e.target.value)}
-          onFocus={() => setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          onFocus={() => { setShowSuggestions(true); setIsFocused(true); }}
+          onBlur={() => { setTimeout(() => setShowSuggestions(false), 200); setIsFocused(false); }}
           placeholder={aiEnabled ? "Try: 'cheap hostel with WiFi near university'" : "Search by name, location, or description..."}
-          className="w-full pl-10 pr-20 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          className={`w-full pl-10 pr-20 py-3 bg-white dark:bg-gray-700 border rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 outline-none ${
+            isFocused 
+              ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-lg shadow-blue-500/10' 
+              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+          }`}
         />
 
         {/* AI Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-10 max-h-60 overflow-y-auto animate-fade-in-up" style={{ animationDuration: '0.2s' }}>
             <div className="p-2">
               <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1 font-semibold">
                 🤖 AI Suggestions
@@ -112,11 +117,11 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
                   key={index}
                   type="button"
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors text-gray-700 dark:text-gray-300"
+                  className="w-full text-left px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-150 text-gray-700 dark:text-gray-300 group"
                 >
                   <div className="flex items-center gap-2">
                     <SearchIcon />
-                    <span>{suggestion}</span>
+                    <span className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{suggestion}</span>
                   </div>
                 </button>
               ))}
