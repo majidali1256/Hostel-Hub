@@ -145,12 +145,43 @@ const ReportsGenerator: React.FC = () => {
                             {loading ? 'Generating...' : 'Generate'}
                         </button>
                         {report && reportType !== 'summary' && (
-                            <button
-                                onClick={exportCSV}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                            >
-                                📄 CSV
-                            </button>
+                            <>
+                                <button
+                                    onClick={exportCSV}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                >
+                                    📄 CSV
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const printArea = document.getElementById('report-printable');
+                                        if (!printArea) return;
+                                        const win = window.open('', '_blank');
+                                        if (!win) return;
+                                        win.document.write(`
+                                            <html><head><title>${report.type} Report</title>
+                                            <style>
+                                                body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #1a1a1a; }
+                                                h2 { margin-bottom: 4px; } h3 { margin-top: 20px; }
+                                                table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+                                                th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; font-size: 13px; }
+                                                th { background: #f5f5f5; font-weight: 600; }
+                                                .meta { color: #666; font-size: 13px; }
+                                            </style></head><body>
+                                            <h2>${report.type}</h2>
+                                            <p class="meta">Period: ${new Date(report.period.start).toLocaleDateString()} - ${new Date(report.period.end).toLocaleDateString()}</p>
+                                            <p class="meta">Generated: ${new Date(report.generatedAt).toLocaleDateString()}</p>
+                                            ${printArea.innerHTML}
+                                            </body></html>
+                                        `);
+                                        win.document.close();
+                                        setTimeout(() => { win.print(); }, 500);
+                                    }}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                >
+                                    🖨️ PDF
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -236,7 +267,7 @@ const ReportsGenerator: React.FC = () => {
 
                     {/* Other Reports - Data Table */}
                     {reportType !== 'summary' && report.data && (
-                        <div>
+                        <div id="report-printable">
                             {report.totalRevenue !== undefined && (
                                 <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <span className="text-lg font-bold text-green-800 dark:text-green-300">

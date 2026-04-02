@@ -25,7 +25,6 @@ const Profile = React.lazy(() => import('./components/Profile'));
 const HostelDetail = React.lazy(() => import('./components/HostelDetail'));
 const Settings = React.lazy(() => import('./components/Settings'));
 const ChatDashboard = React.lazy(() => import('./components/ChatDashboard'));
-const RoommateMatchList = React.lazy(() => import('./components/RoommateMatchList'));
 const AgreementDashboard = React.lazy(() => import('./components/AgreementDashboard'));
 const AdminLayout = React.lazy(() => import('./components/admin/AdminLayout'));
 const OAuthCallback = React.lazy(() => import('./components/OAuthCallback'));
@@ -82,7 +81,7 @@ const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingHostel, setEditingHostel] = useState<Hostel | null>(null);
 
-  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history' | 'appointments'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history' | 'appointments'>('dashboard');
   const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
   const [selectedHostelOwner, setSelectedHostelOwner] = useState<User | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -267,7 +266,7 @@ const App: React.FC = () => {
     setIsMenuOpen(false);
   };
 
-  const handleNavigate = (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'roommate-matching' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history') => {
+  const handleNavigate = (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history') => {
     setSelectedHostel(null);
     setCurrentView(view);
     setIsMenuOpen(false);
@@ -773,7 +772,7 @@ const App: React.FC = () => {
     if (currentView === 'profile') return 'My Profile';
     if (currentView === 'settings') return 'Settings';
     if (currentView === 'chat') return 'Messages';
-    if (currentView === 'roommate-matching') return 'Roommate Matching';
+
     if (currentView === 'agreements') return 'Rental Agreements';
     if (currentView === 'admin') return 'Admin Dashboard';
     if (currentView === 'rent-estimator') return 'Fair Rent Estimator';
@@ -793,8 +792,7 @@ const App: React.FC = () => {
               return <Settings user={user} onUpdateUser={handleUpdateUser} theme={theme} toggleTheme={toggleTheme} />;
             case 'chat':
               return <ChatDashboard currentUser={user} initialConversationId={initialConversationId} />;
-            case 'roommate-matching':
-              return <RoommateMatchList />;
+
             case 'agreements':
               return <AgreementDashboard user={user} />;
             case 'admin':

@@ -87,8 +87,35 @@ const AgreementViewer: React.FC<AgreementViewerProps> = ({ agreementId, onClose 
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
-                        Download PDF
+                    <button 
+                        onClick={() => {
+                            const printContent = document.getElementById('agreement-printable');
+                            if (!printContent) return;
+                            const win = window.open('', '_blank');
+                            if (!win) return;
+                            win.document.write(`
+                                <html><head><title>${agreement.title}</title>
+                                <style>
+                                    body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #1a1a1a; }
+                                    h1 { font-size: 24px; margin-bottom: 8px; }
+                                    h3 { font-size: 18px; margin-top: 24px; }
+                                    h4 { font-size: 15px; }
+                                    .term { background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 12px; }
+                                    .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+                                    .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 24px; }
+                                    .sig-box { border: 1px solid #ddd; padding: 24px; border-radius: 8px; }
+                                    img { max-height: 60px; }
+                                    hr { margin: 24px 0; border: none; border-top: 1px solid #ddd; }
+                                </style></head><body>
+                                ${printContent.innerHTML}
+                                </body></html>
+                            `);
+                            win.document.close();
+                            setTimeout(() => { win.print(); }, 500);
+                        }}
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                        📄 Download PDF
                     </button>
                     {agreement.status === 'pending' && (
                         <button
@@ -109,7 +136,7 @@ const AgreementViewer: React.FC<AgreementViewerProps> = ({ agreementId, onClose 
             </div>
 
             {/* Content */}
-            <div className="p-8 md:p-12 space-y-8">
+            <div id="agreement-printable" className="p-8 md:p-12 space-y-8">
                 {/* Agreement Body */}
                 <div
                     className="prose max-w-none"
