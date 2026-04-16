@@ -41,6 +41,12 @@ const SearchFilters = React.lazy(() => import('./components/SearchFilters'));
 const HostelMap = React.lazy(() => import('./components/HostelMap'));
 const AIRecommendations = React.lazy(() => import('./components/AIRecommendations'));
 
+// Legal pages
+const PrivacyPolicy = React.lazy(() => import('./components/PrivacyPolicy'));
+const TermsOfService = React.lazy(() => import('./components/TermsOfService'));
+const CookieConsent = React.lazy(() => import('./components/CookieConsent'));
+const FeedbackModal = React.lazy(() => import('./components/FeedbackModal'));
+
 // Loading component with smooth animation
 const LoadingFallback = () => (
   <div className="flex flex-col justify-center items-center h-full min-h-[200px] animate-fade-in">
@@ -81,7 +87,7 @@ const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingHostel, setEditingHostel] = useState<Hostel | null>(null);
 
-  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history' | 'appointments'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'settings' | 'chat' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history' | 'appointments' | 'privacy' | 'terms'>('dashboard');
   const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
   const [selectedHostelOwner, setSelectedHostelOwner] = useState<User | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -89,6 +95,7 @@ const App: React.FC = () => {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [sortOption, setSortOption] = useState('default');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -772,6 +779,8 @@ const App: React.FC = () => {
     if (currentView === 'profile') return 'My Profile';
     if (currentView === 'settings') return 'Settings';
     if (currentView === 'chat') return 'Messages';
+    if (currentView === 'privacy') return 'Privacy Policy';
+    if (currentView === 'terms') return 'Terms of Service';
 
     if (currentView === 'agreements') return 'Rental Agreements';
     if (currentView === 'admin') return 'Admin Dashboard';
@@ -792,6 +801,10 @@ const App: React.FC = () => {
               return <Settings user={user} onUpdateUser={handleUpdateUser} theme={theme} toggleTheme={toggleTheme} />;
             case 'chat':
               return <ChatDashboard currentUser={user} initialConversationId={initialConversationId} />;
+            case 'privacy':
+              return <PrivacyPolicy />;
+            case 'terms':
+              return <TermsOfService />;
 
             case 'agreements':
               return <AgreementDashboard user={user} />;
@@ -945,7 +958,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300">
-      {isMenuOpen && <Sidebar user={user} onLogout={handleLogout} onNavigate={handleNavigate} onClose={() => setIsMenuOpen(false)} />}
+      {isMenuOpen && <Sidebar user={user} onLogout={handleLogout} onNavigate={handleNavigate} onClose={() => setIsMenuOpen(false)} onOpenFeedback={() => setShowFeedbackModal(true)} />}
 
       <main className="p-4 md:p-8">
         <header className="relative flex items-center justify-between mb-8 h-16 animate-fade-in-down">
@@ -1010,6 +1023,20 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {showFeedbackModal && (
+        <Suspense fallback={null}>
+          <FeedbackModal
+            isOpen={showFeedbackModal}
+            onClose={() => setShowFeedbackModal(false)}
+            user={user}
+          />
+        </Suspense>
+      )}
+
+      <Suspense fallback={null}>
+        <CookieConsent />
+      </Suspense>
     </div>
   );
 };

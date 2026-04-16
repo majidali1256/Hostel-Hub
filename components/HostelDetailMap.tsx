@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -10,6 +10,18 @@ L.Icon.Default.mergeOptions({
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Helper to force map size recalculation
+function MapSizeHelper() {
+  const map = useMap();
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+        if (map) map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
+}
 
 interface HostelDetailMapProps {
   coordinates: [number, number]; // GeoJSON format: [longitude, latitude]
@@ -37,6 +49,7 @@ const HostelDetailMap: React.FC<HostelDetailMapProps> = ({ coordinates, hostelNa
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapSizeHelper />
         <Marker position={position}>
           <Popup>
             <strong>{hostelName}</strong>

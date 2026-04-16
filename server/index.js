@@ -9,8 +9,29 @@ const Hostel = require('./models/Hostel');
 const { generateAccessToken, generateRefreshToken } = require('./utils/jwt');
 const { authMiddleware, roleMiddleware } = require('./middleware/auth');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('./utils/email');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
+
+// Security: Rate Limiting
+// General API Rate Limiter
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // Limit each IP to 200 requests per `window` (here, per 15 minutes)
+    message: { error: 'Too many requests from this IP, please try again after 15 minutes' },
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Stricter Rate Limiter for Auth routes (login/register)
+const authLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // Limit each IP to 10 login/register requests per hour
+    message: { error: 'Too many authentication attempts from this IP, please try again after an hour' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 app.use(passport.initialize());
 const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hostel-hub';
@@ -18,7 +39,10 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hostel
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Apply general API rate limiter to all API routes
+app.use('/api/', apiLimiter);
+
 app.use('/uploads', express.static('uploads')); // Serve uploaded files
 
 const verificationRoutes = require('./routes/verificationRoutes');
@@ -121,7 +145,7 @@ app.post('/api/setup/admin', async (req, res) => {
 });
 
 // Auth Routes
-app.post('/api/auth/signup', async (req, res) => {
+app.post('/api/auth/signup', authLimiter, async (req, res) => {
     try {
         const { email, password, username, ...otherData } = req.body;
 
@@ -196,7 +220,7 @@ if (process.env.FACEBOOK_APP_ID) {
     });
 }
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });

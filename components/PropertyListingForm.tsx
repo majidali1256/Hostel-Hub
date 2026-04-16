@@ -35,6 +35,15 @@ function MapUpdater({ center }: { center: [number, number] }) {
   useEffect(() => {
     map.flyTo(center, 13);
   }, [center, map]);
+
+  // Fix: Force Leaflet to recalculate container size when modal opens
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        if (map) map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+
   return null;
 }
 

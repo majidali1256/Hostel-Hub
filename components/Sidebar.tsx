@@ -7,8 +7,9 @@ interface SidebarProps {
     user: User;
     unreadMessagesCount?: number;
     onLogout: () => void;
-    onNavigate: (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history' | 'smart-search') => void;
+    onNavigate: (view: 'dashboard' | 'profile' | 'settings' | 'chat' | 'agreements' | 'admin' | 'rent-estimator' | 'bookings' | 'booking-history' | 'smart-search' | 'privacy' | 'terms') => void;
     onClose: () => void;
+    onOpenFeedback?: () => void;
 }
 
 const roleStyles: { [key: string]: string } = {
@@ -18,7 +19,7 @@ const roleStyles: { [key: string]: string } = {
     admin: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ user, unreadMessagesCount = 0, onLogout, onNavigate, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ user, unreadMessagesCount = 0, onLogout, onNavigate, onClose, onOpenFeedback }) => {
     const navItemClasses = "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 hover:bg-blue-50 dark:hover:bg-gray-700/70 hover:text-blue-600 dark:hover:text-blue-400 text-left relative group active:scale-[0.98]";
 
     return (
@@ -117,6 +118,12 @@ const Sidebar: React.FC<SidebarProps> = ({ user, unreadMessagesCount = 0, onLogo
                 </div>
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+                    <button onClick={() => { onOpenFeedback?.(); onClose(); }} className={navItemClasses}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Help & Support</span>
+                    </button>
                     <button onClick={() => onNavigate('settings')} className={navItemClasses}>
                         <SettingsIcon />
                         <span>Settings</span>
@@ -136,6 +143,13 @@ const Sidebar: React.FC<SidebarProps> = ({ user, unreadMessagesCount = 0, onLogo
                             </span>
                         </div>
                     </div>
+                    
+                    <div className="pt-2 flex justify-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                        <button onClick={() => onNavigate('privacy')} className="hover:text-gray-700 dark:hover:text-gray-300 hover:underline">Privacy</button>
+                        <span>&bull;</span>
+                        <button onClick={() => onNavigate('terms')} className="hover:text-gray-700 dark:hover:text-gray-300 hover:underline">Terms</button>
+                    </div>
+
                     <Button onClick={onLogout} variant="secondary" fullWidth>
                         Logout
                     </Button>

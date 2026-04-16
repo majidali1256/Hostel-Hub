@@ -12,12 +12,12 @@ export default defineConfig(({ mode }) => {
       open: false, // Disable auto-open in Docker
       proxy: {
         '/api': {
-          target: 'http://localhost:5002',
+          target: 'http://localhost:5003',
           changeOrigin: true,
           secure: false,
         },
         '/socket.io': {
-          target: 'http://localhost:5002',
+          target: 'http://localhost:5003',
           ws: true,
         }
       }
